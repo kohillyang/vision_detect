@@ -432,12 +432,20 @@ bool isCircle(const std::vector<cv::Point> &points,const cv::Point &center,float
 			kohill::print("ltheta[i]",z);
 			flag[z] = true;
 		}
-		bool r = true;
+		bool isClose = true;
 		for(int i = 0;i<flag.size();i++){
-			r = r && flag[i];
+			isClose = isClose && flag[i];
 		}
-		kohill::print("finished.");
-		return r;
+		bool r = false;
+		if(isClose){
+			float dis_points_ciecle = 0;
+			for(int i = 0;i<points.size();i++){
+				dis_points_ciecle += point_circle_distance(points[i],center,radius);
+			}
+			return dis_points_ciecle < 6.28*radius*10;
+		}else{
+			return false;
+		}
 	}
 	return false;
 }
