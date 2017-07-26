@@ -12,8 +12,7 @@ namespace autocar
 {
 namespace vision_mul
 {
-bool detectCircle(const cv::Mat &img,cv::Point2f &center,float &);
-bool detectRectangle(const cv::Mat &img);
+void kohill_armor_detect(const cv::Mat &img);
 }
 }
 

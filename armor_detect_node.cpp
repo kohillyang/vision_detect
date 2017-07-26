@@ -56,9 +56,9 @@ armor_detect_node::~armor_detect_node(void)
 
 void armor_detect_node::running(void)
 {
-	this->debug_on = true;
+	this->debug_on = false;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/6.avi");
+    cv::VideoCapture capture_camera_forward("/home/kohill/Desktop/camera1.avi");
 //    cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
@@ -85,7 +85,7 @@ void armor_detect_node::running(void)
 
     for (;;)
     {
-        cv::waitKey(500);
+        cv::waitKey(1);
 
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)
@@ -93,8 +93,7 @@ void armor_detect_node::running(void)
         cv::Point2f circle_center;
         float cirlce_r;
 
-        detectCircle(image,circle_center,cirlce_r);
-        detectRectangle(image);
+        kohill_armor_detect(image);
         if(image.empty())
         {
             std::cout<<"Image has no data!"<<std::endl;
