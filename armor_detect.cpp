@@ -2,7 +2,7 @@
 #include "debug_utility.hpp"
 #include "draw.h"
 #include <algorithm>
-#include <cmath>
+#include "circle_detect.hpp"
 namespace autocar
 {
 namespace vision_mul
@@ -41,21 +41,11 @@ armor_detecter::armor_detecter(bool debug_on)
     old_armor->armor.size.height = 0;
 }
 
-
 cv::Mat armor_detecter::highlight_blue_or_red(const cv::Mat &image, bool detect_blue)
 {
     // 由于OpenCV的原因, 图像是BGR保存格式
     std::vector<cv::Mat> bgr_channel;
     cv::split(image, bgr_channel);
-    cv::imshow("r",bgr_channel[2]);
-    cv::imshow("g",bgr_channel[1]);
-    cv::imshow("b",bgr_channel[0]);
-
-    static cv::Mat r_his0,r_his1,r_his2;
-    r_his2 = r_his1;
-    r_his1 = r_his0;
-    r_his0 = 0.7*(bgr_channel[2] - bgr_channel[1]*0.8) + 0.2 * r_his1 + 0.1*r_his2;
-    cv::imshow("r-(g+b)",r_his0);
 
     // 如果匹配蓝色
     if (detect_blue)
@@ -67,7 +57,7 @@ cv::Mat armor_detecter::highlight_blue_or_red(const cv::Mat &image, bool detect_
     else
     {
         // 红通道减去绿通道
-        return r_his0;
+        return bgr_channel[2] - bgr_channel[1];
     }
 
 
@@ -155,8 +145,7 @@ std::vector<cv::RotatedRect> armor_detecter::to_light_rects(const std::vector<st
 
     return lights;
 }
-volatile int threshold1 = 180;
-volatile int threshold2 = 50;
+
 std::vector<cv::RotatedRect> armor_detecter::detect_lights(bool detect_blue)
 {
 
@@ -185,12 +174,9 @@ std::vector<cv::RotatedRect> armor_detecter::detect_lights(bool detect_blue)
     // 亮图灯柱周边颜色
     //speed_test_reset();
     auto light = highlight_blue_or_red(m_image, detect_blue); // 灯柱周边颜色高亮图
-    cv::threshold(m_gray, m_binary_brightness, threshold1, 255, cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
+    cv::threshold(m_gray, m_binary_brightness, 100, 255, cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
     double thresh = detect_blue ? 90 : 50;
-    cv::threshold(light, m_binary_color, threshold2, 255, cv::ThresholdTypes::THRESH_BINARY); // 蓝色/红色二值图
-//    cv::imshow("m_binary_brightness",m_binary_brightness);
-//    cv::imshow("m_binary_color",m_binary_color);
-
+    cv::threshold(light, m_binary_color, thresh, 255, cv::ThresholdTypes::THRESH_BINARY); // 蓝色/红色二值图
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::dilate(m_binary_color, m_binary_color, element, cv::Point(-1, -1), 1);
     m_binary_light = m_binary_color & m_binary_brightness; // 两二值图交集
@@ -401,56 +387,10 @@ std::vector<armor_info> armor_detecter::filter_by_features(std::vector<armor_inf
 
     return final_armors;
 }
-float point_distance(const cv::Point2f point,const cv::Point2f center){
-	auto dx = point.x - center.x;
-	auto dy = point.y - center.y;
-	return std::sqrt(dx*dx+dy*dy);
-}
-float point_circle_distance(const cv::Point2f point,const cv::Point2f center,float radius){
-	auto x0 = point.x;
-	auto y0 = point.y;
-	float dis = point_distance(point,center);
-	if(dis <= radius){
-		return radius -dis ;
-	}else{
-		return radius + dis;
-	}
-}
 
-#include "kohill.h"
-bool isCircle(const std::vector<cv::Point> &points,const cv::Point &center,float radius){
-	if(radius > 7){
-		const int perDegree = 15;
-		std::vector<bool> flag(360/perDegree);//default false.
-		for(auto iter = flag.begin();iter != flag.end();iter ++){
-			*iter = false;
-		}
-
-		for(int i = 0;i<points.size();i++){
-			const float theta = std::atan2(points[i].x - center.x,points[i].y - center.y) *180/3.14f + 180;
-			int z = (int)(theta/perDegree);
-			kohill::print("ltheta[i]",z);
-			flag[z] = true;
-		}
-		bool isClose = true;
-		for(int i = 0;i<flag.size();i++){
-			isClose = isClose && flag[i];
-		}
-		bool r = false;
-		if(isClose){
-			float dis_points_ciecle = 0;
-			for(int i = 0;i<points.size();i++){
-				dis_points_ciecle += point_circle_distance(points[i],center,radius);
-			}
-			return dis_points_ciecle < 6.28*radius*10;
-		}else{
-			return false;
-		}
-	}
-	return false;
-}
 bool armor_detecter::detect(const cv::Mat &image, bool detect_blue)
 {
+//	debug_on_ = true;
     //m_common = image.clone();
 
     std::vector<armor_info> all_armors;
@@ -462,29 +402,8 @@ bool armor_detecter::detect(const cv::Mat &image, bool detect_blue)
         possible_armor = image.clone();
         light_img = image.clone();
     }
-    std::vector<cv::Vec3f> circles;
+
     cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
-    auto m_gray_circle = m_gray.clone();
-    auto m_image_circle = m_image.clone();
-
-    cv::Mat m_gray_binary ;
-    cv::GaussianBlur(m_gray_circle, m_gray_circle, cv::Size(7, 7), 2, 2);
-//    cv::threshold(m_gray_circle, m_gray_binary, 60, 255, cv::ThresholdTypes::THRESH_BINARY);
-    cv::Canny(m_gray_circle,m_gray_binary,125,255);
-    cv::imshow("th",m_gray_binary);
-    std::vector<std::vector<cv::Point>> contours;
-    cv::findContours(m_gray_binary,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-	for (size_t i = 0; i < contours.size() ; i++) {
-		float radius = 0;
-		cv::Point2f center;
-		cv::minEnclosingCircle(cv::Mat(contours[i]), center, radius);
-		if(isCircle(contours[i],center,radius)){
-			cv::circle(m_image_circle, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-			cv::circle(m_image_circle, center, radius, cv::Scalar(255, 0, 0), 3,
-					8, 0);
-		}
-	}
-
     auto lights = detect_lights(detect_blue);
     //std::cout<<"lights size"<<lights.size()<<std::endl;
 
@@ -524,17 +443,13 @@ bool armor_detecter::detect(const cv::Mat &image, bool detect_blue)
     std::cout<<"debug_on"<<debug_on_<<std::endl;
     if(debug_on_)
         debug_vision();
-
-    cv::imshow("m_gray_binary",m_gray_binary);
-    cv::imshow("m_image_circle",m_image_circle);
-
     if(!armors.empty())
     {
         slect_final_armor(armors);
         if(debug_on_)
         {
-//            draw_rotated_rect(m_image, armor->armor, cv::Scalar(0,0,255), 2);
-//            debug_vision();
+            draw_rotated_rect(m_image, armor->armor, cv::Scalar(0,0,255), 2);
+            debug_vision();
         }
         return true;
     }

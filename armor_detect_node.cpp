@@ -7,7 +7,7 @@
 #include "video_recoder.h"
 #include <memory>
 #include <math.h>
-
+#include "circle_detect.hpp"
 #define _DEBUG_VISION
 namespace autocar
 {
@@ -56,17 +56,16 @@ armor_detect_node::~armor_detect_node(void)
 
 void armor_detect_node::running(void)
 {
-	debug_on = true;
+	this->debug_on = true;
     cv::Mat image;
-    const std::string mp4path = "/home/kohill/vision_dataset/4.mp4";
-    cv::VideoCapture capture_camera_forward(mp4path);
-//    cv::VideoCapture capture_camera_forward(1);
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/6.avi");
+//    cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
         std::cout<<"Cannot open the camera!"<<std::endl;
         return;
     }
-    set_camera_exposure("/dev/video1", 25);
+    set_camera_exposure("/dev/video0", 100);
     //{
     //  while (true) {
     //    boost::this_thread::sleep_for(boost::chrono::seconds(10));
@@ -74,7 +73,6 @@ void armor_detect_node::running(void)
     //}
 
     cv::VideoCapture capture_camera_back("/home/dji/Videos/armor_20170405_170846.avi");
-//    cv::VideoCapture capture_camera_back("/dev/video");
     std::shared_ptr<armor_detecter> armor_detector;
     std::shared_ptr<labeler> label;
     std::shared_ptr<video_recoder> recoder;
@@ -87,13 +85,16 @@ void armor_detect_node::running(void)
 
     for (;;)
     {
-        auto speed_test_start_begin_time = std::chrono::system_clock::now();
+        cv::waitKey(500);
+
+    	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)
         capture_camera_forward >> image;
-//        cv::Mat img;
-//        cv::resize(image,img,cv::Size(240,320));
-        cv::imshow("image",image);
-        cv::waitKey(1);
+        cv::Point2f circle_center;
+        float cirlce_r;
+
+        detectCircle(image,circle_center,cirlce_r);
+        detectRectangle(image);
         if(image.empty())
         {
             std::cout<<"Image has no data!"<<std::endl;

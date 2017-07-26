@@ -24,6 +24,8 @@ int main(int argc, char **argv)
   {
     std::cout << ex.what() << std::endl;
   }
+  extern int test(void);
+  test();
   return 0;
 }
 

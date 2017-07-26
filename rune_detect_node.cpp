@@ -239,11 +239,10 @@ int main(int argc, char** argv) {
 
     ::google::InitGoogleLogging(argv[0]);
 
-    const string coffe_path = "~/tx1/backup/caffe-master";
-    string model_file   = coffe_path + "examples/mnist/lenet_mnist_test.prototxt";
-    string trained_file = coffe_path + "examples/mnist/lenet_iter_10000.caffemodel";
-    string mean_file    = coffe_path + "examples/mnist/mean.binaryproto";
-    string label_file   = coffe_path + "/data/mnist/mytest.txt";
+    string model_file   = "/home/ubuntu/caffe/examples/mnist/lenet_mnist_test.prototxt";
+    string trained_file = "/home/ubuntu/caffe/examples/mnist/lenet_iter_10000.caffemodel";
+    string mean_file    = "/home/ubuntu/caffe/examples/mnist/mean.binaryproto";
+    string label_file   = "/home/ubuntu/caffe/data/mnist/mytest.txt";
     /*string model_file   = argv[1];
   string trained_file = argv[2];
   string mean_file    = argv[3];
