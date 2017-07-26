@@ -43,7 +43,8 @@ int main()
     CvCapture* capture=cvCaptureFromCAM(-1);
     CvVideoWriter* video=NULL;
     IplImage* frame=NULL;
-    autocar::vision_mul::set_camera_exposure("/dev/video1", 100);
+    unsigned int ex_count = 0;
+    autocar::vision_mul::set_camera_exposure("/dev/video0", 50);
     int n;
     if(!capture) //如果不能打开摄像头给出警告
     {
@@ -53,7 +54,7 @@ int main()
     else
     {
        frame=cvQueryFrame(capture); //首先取得摄像头中的一帧
-        video=cvCreateVideoWriter("/home/kohill/kohillyang/camera1.avi", CV_FOURCC('X', 'V', 'I', 'D'), 25,
+        video=cvCreateVideoWriter("/home/kohill/vision_dataset/15.avi", CV_FOURCC('X', 'V', 'I', 'D'), 25,
        cvSize(frame->width,frame->height)); //创建CvVideoWriter对象并分配空间
  //保存的文件名为camera.avi，编码要在运行程序时选择，大小就是摄像头视频的大小，帧频率是32
        if(video) //如果能创建CvVideoWriter对象则表明成功
@@ -65,6 +66,8 @@ int main()
         int i = 0;
        while(i <= 20000000) // 让它循环200次自动停止录取
         {
+    	    //autocar::vision_mul::set_camera_exposure("/dev/video0", 100+(0x01 & ex_count)*50 );
+    	    ex_count ++;
           frame=cvQueryFrame(capture); //从CvCapture中获得一帧
            if(!frame)
           {
