@@ -33,7 +33,9 @@ const float rectang_detecter::threshold_line_binary_color = 3000.f;
 
 rectandetect_info::rectandetect_info()
 {
-
+	type = false;
+	score = 0.0f;
+	lost = 10000.0;
 }
 rectang_detecter::rectang_detecter(bool debug_on)
 {
@@ -224,38 +226,57 @@ float rectang_detecter::rectlongLean(const cv::RotatedRect &rect,float &w,float 
 	}
 	return angle;
 }
-std::vector<rectandetect_info> rectang_detecter::detect_select_rect(const std::vector<cv::RotatedRect> &lights)
+rectandetect_info rectang_detecter::detect_select_rect(const std::vector<cv::RotatedRect> &lights)
 {
-	std::vector<rectandetect_info> rectang;
+	rectandetect_info rectang = rectandetect_info();
 	for (const auto &light1 : lights) {
 		for (const auto &light2 : lights) {
-//			auto edge1 = std::minmax(light1.size.width, light1.size.height);
-//			auto edge2 = std::minmax(light2.size.width, light2.size.height);
-//			auto distance = std::sqrt((light1.center.x-light2.center.x)*(light1.center.x-light2.center.x)+(light1.center.y-light2.center.y)*(light1.center.y-light2.center.y));
-//			auto center_angle = std::atan((light1.center.y - light2.center.y) / (light1.center.x - light2.center.x)) * 180 / CV_PI;
-			//std::cout<<"center angle: "<<center_angle<<std::endl;
 
-//			cv::RotatedRect rect;
-//			rect.angle = static_cast<float>(center_angle);
-//			rect.center.x = (light1.center.x + light2.center.x) / 2;
-//			rect.center.y = (light1.center.y + light2.center.y) / 2;
-//			rect.size.width = static_cast<float>(distance)-std::max(edge1.first, edge2.first);
-//			rect.size.height = std::max(edge1.second, edge2.second);
 			float w1,h1,w2,h2,ang1,ang2,h_,w_;
 			ang1 = rectlongLean(light1,w1,h1);
 			ang2 = rectlongLean(light2,w2,h2);
 			h_=(h1+h2)/2; w_=(w1+w2)/2;
 
+
+
 			if(//abs(ang1-ang2)<15
-					abs(h1-h2)<h_/3
+					abs(h1-h2) < h_/3
 					//&&abs(w1-w2)<w_/4
 					)//delta h , w ,ang
 			{
+
 				if(abs(light1.center.x - light2.center.x)<3.5*h_&& abs(light1.center.x - light2.center.x)>h_
 					&&abs(light1.center.y - light2.center.y)<h_/2)   //delta x ,y
 				{
+
 					draw_rotated_rect(final_rectang, light1, cv::Scalar(255,0,255), 2);
 					draw_rotated_rect(final_rectang, light2, cv::Scalar(255,0,255), 2);
+
+		            cv::RotatedRect rect;
+		            rect.angle = 0;
+		            rect.center.x = (light1.center.x + light2.center.x) / 2;
+		            rect.center.y = (light1.center.y + light2.center.y) / 2;
+		            rect.size.width = abs(light1.center.x - light2.center.x);
+		            rect.size.height = h_;
+
+
+					cv::Point2f vertex[4];
+					rect.points(vertex);
+					std::vector<cv::Point2f> vecpoint;
+
+					for(auto (&vertexn):vertex)
+					{
+						vecpoint.push_back(vertexn);
+
+					}
+
+					float lost1 = abs(ang1-ang2)*h_/30+abs(h1-h2);
+					float lost2 = abs(abs(light1.center.x - light2.center.x)-2.4*h_)+abs(light1.center.y - light2.center.y);
+					float totallost = lost1 + lost2;
+					if (totallost < rectang.lost)
+					{
+						rectang = rectandetect_info(rect, vecpoint, light1,light2, totallost);
+					}
 				}
 
 			}
@@ -263,10 +284,40 @@ std::vector<rectandetect_info> rectang_detecter::detect_select_rect(const std::v
 		}
 	}
 
-
+	if (rectang.type == true)
+	{
+		draw_rotated_rect(final_rectang, rectang.rect, cv::Scalar(255, 0, 0), 2);
+	}
 	imshow("final_rectang",final_rectang);
 
 	return rectang;
+}
+std::vector<cv::RotatedRect> rectang_detecter::detect_enemy_light(const cv::Mat &image, bool detect_blue)
+{
+    m_image = image.clone();
+    m_image_hql = image.clone();
+    m_show = image.clone();
+    final_rectang = image.clone();
+    possible_rectang = image.clone();
+    light_img = image.clone();
+
+    cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);//gray
+    //imshowd("m_gray", m_gray);
+    auto lights = detect_lights(detect_blue);
+
+    draw_rotated_rects(light_img, lights, cv::Scalar(0,255,0), 2, true, cv::Scalar(255,0,0));
+
+    lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area,m_threshold_max_area);
+
+    draw_rotated_rects(light_img, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
+
+    imshow("light_img",light_img);
+
+    auto Rectang = detect_select_rect(lights);
+
+
+	return lights;
+
 }
 bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
 {

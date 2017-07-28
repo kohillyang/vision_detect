@@ -59,7 +59,7 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/11.avi");
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/6.avi");
     //cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
@@ -86,9 +86,11 @@ void armor_detect_node::running(void)
     int detected_count = 0;
     int undetected_count = 3;
 
+    std::vector<cv::RotatedRect> hql_lights;
+
     for (;;)
     {
-        //cv::waitKey(100);
+        cv::waitKey(150);
 
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)
