@@ -86,6 +86,8 @@ void armor_detect_node::running(void)
     int detected_count = 0;
     int undetected_count = 3;
 
+    std::vector<cv::RotatedRect> hql_lights;
+
     for (;;)
     {
         //cv::waitKey(100);

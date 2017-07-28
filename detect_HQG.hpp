@@ -16,23 +16,24 @@ namespace vision_mul
 class rectandetect_info
 {
 public:
-	rectandetect_info(int type_, cv::RotatedRect rect_, std::vector<cv::Point2f> points_, cv::RotatedRect left_=cv::RotatedRect(), cv::RotatedRect right_=cv::RotatedRect())
+	rectandetect_info(cv::RotatedRect rect_, std::vector<cv::Point2f> points_, cv::RotatedRect left_=cv::RotatedRect(), cv::RotatedRect right_=cv::RotatedRect(), float lost_ = 10000.0)
   {
-    type = type_;
+    type = true;
     rect = rect_;
     points = points_;
     left_light = left_;
     right_light = right_;
     score = 0.0f;
+    lost = lost_;
   }
 	rectandetect_info();
-
-  int type;
+  bool type;
   cv::RotatedRect rect;
   std::vector<cv::Point2f> points;
   cv::RotatedRect left_light;
   cv::RotatedRect right_light;
   float score;
+  float lost;
 };
 
 
@@ -82,9 +83,11 @@ public:
 
 	float rectlongLean(const cv::RotatedRect &rect,float &w,float &h);
 
-	std::vector<rectandetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
+	rectandetect_info detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
 	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, float thresh_max_angle, float thresh_min_area, float thresh_max_area);
+
+	std::vector<cv::RotatedRect> detect_enemy_light(const cv::Mat &image, bool detect_blue);
 
 	bool detect(const cv::Mat &image, bool detect_blue);
 };

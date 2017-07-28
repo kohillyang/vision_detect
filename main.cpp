@@ -12,7 +12,6 @@
 
 int main(int argc, char **argv)
 {
-
   ros::init(argc, argv, "armor_detect");
   try
   {
