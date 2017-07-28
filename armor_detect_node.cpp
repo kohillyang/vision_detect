@@ -59,7 +59,7 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/6.avi");
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
     //cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
@@ -90,7 +90,7 @@ void armor_detect_node::running(void)
 
     for (;;)
     {
-        cv::waitKey(150);
+        //cv::waitKey(150);
 
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)

@@ -83,7 +83,7 @@ public:
 
 	float rectlongLean(const cv::RotatedRect &rect,float &w,float &h);
 
-	rectandetect_info detect_select_rect(const std::vector<cv::RotatedRect> &lights);
+	std::vector<rectandetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
 	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, float thresh_max_angle, float thresh_min_area, float thresh_max_area);
 

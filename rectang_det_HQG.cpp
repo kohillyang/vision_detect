@@ -23,7 +23,7 @@ namespace vision_mul
 {
 const float rectang_detecter::m_threshold_max_angle = 30.0f;
 
-const float rectang_detecter::m_threshold_min_area = 5.0f;
+const float rectang_detecter::m_threshold_min_area = 3.0f;
 
 const float rectang_detecter::m_threshold_max_area = 10000.0f;
 
@@ -226,27 +226,28 @@ float rectang_detecter::rectlongLean(const cv::RotatedRect &rect,float &w,float 
 	}
 	return angle;
 }
-rectandetect_info rectang_detecter::detect_select_rect(const std::vector<cv::RotatedRect> &lights)
+std::vector<rectandetect_info> rectang_detecter::detect_select_rect(const std::vector<cv::RotatedRect> &lights)
 {
+	std::vector<rectandetect_info> rectangs;
 	rectandetect_info rectang = rectandetect_info();
 	for (const auto &light1 : lights) {
 		for (const auto &light2 : lights) {
 
-			float w1,h1,w2,h2,ang1,ang2,h_,w_;
+			float w1,h1,w2,h2,ang1,ang2,h_,w_,ang_;
 			ang1 = rectlongLean(light1,w1,h1);
 			ang2 = rectlongLean(light2,w2,h2);
-			h_=(h1+h2)/2; w_=(w1+w2)/2;
+			h_=(h1+h2)/2; w_=(w1+w2)/2; ang_=(ang1+ang2)/2;
 
 
 
 			if(//abs(ang1-ang2)<15
-					abs(h1-h2) < h_/3
+					abs(h1-h2) < 0.5*h_
 					//&&abs(w1-w2)<w_/4
 					)//delta h , w ,ang
 			{
 
-				if(abs(light1.center.x - light2.center.x)<3.5*h_&& abs(light1.center.x - light2.center.x)>h_
-					&&abs(light1.center.y - light2.center.y)<h_/2)   //delta x ,y
+				if(abs(light1.center.x - light2.center.x) < 3.5*h_&& abs(light1.center.x - light2.center.x) > 0.8*h_
+					&&abs(light1.center.y - light2.center.y) < 0.5*(1 + ang_/45)*h_ )    //delta x ,y
 				{
 
 					draw_rotated_rect(final_rectang, light1, cv::Scalar(255,0,255), 2);
@@ -256,8 +257,8 @@ rectandetect_info rectang_detecter::detect_select_rect(const std::vector<cv::Rot
 		            rect.angle = 0;
 		            rect.center.x = (light1.center.x + light2.center.x) / 2;
 		            rect.center.y = (light1.center.y + light2.center.y) / 2;
-		            rect.size.width = abs(light1.center.x - light2.center.x);
-		            rect.size.height = h_;
+		            rect.size.width = 1.2*abs(light1.center.x - light2.center.x);
+		            rect.size.height = 1.5*h_;
 
 
 					cv::Point2f vertex[4];
@@ -277,20 +278,20 @@ rectandetect_info rectang_detecter::detect_select_rect(const std::vector<cv::Rot
 					{
 						rectang = rectandetect_info(rect, vecpoint, light1,light2, totallost);
 					}
+					rectangs.push_back(rectandetect_info(rect, vecpoint, light1,light2, totallost));
 				}
 
 			}
 
 		}
 	}
-
-	if (rectang.type == true)
+	for(auto it : rectangs)
 	{
-		draw_rotated_rect(final_rectang, rectang.rect, cv::Scalar(255, 0, 0), 2);
+		draw_rotated_rect(final_rectang, it.rect, cv::Scalar(0, 255, 47), 2);
 	}
 	imshow("final_rectang",final_rectang);
 
-	return rectang;
+	return rectangs;
 }
 std::vector<cv::RotatedRect> rectang_detecter::detect_enemy_light(const cv::Mat &image, bool detect_blue)
 {
