@@ -8,6 +8,7 @@
 #include <memory>
 #include <math.h>
 #include "circle_detect.hpp"
+#include "detect_HQG.hpp"
 #define _DEBUG_VISION
 namespace autocar
 {
@@ -59,7 +60,7 @@ void armor_detect_node::running(void)
 	this->debug_on = true;
     cv::Mat image;
     cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/11.avi");
-//    cv::VideoCapture capture_camera_forward(0);
+    //cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
         std::cout<<"Cannot open the camera!"<<std::endl;
@@ -72,8 +73,10 @@ void armor_detect_node::running(void)
     //  }
     //}
 
+
     cv::VideoCapture capture_camera_back("/home/dji/Videos/armor_20170405_170846.avi");
     std::shared_ptr<armor_detecter> armor_detector;
+    std::shared_ptr<rectang_detecter> rectang_detector;
     std::shared_ptr<labeler> label;
     std::shared_ptr<video_recoder> recoder;
 
@@ -85,7 +88,7 @@ void armor_detect_node::running(void)
 
     for (;;)
     {
-        cv::waitKey(100);
+        //cv::waitKey(100);
 
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)
@@ -94,7 +97,7 @@ void armor_detect_node::running(void)
         float cirlce_r;
 
         //detectCircle(image,circle_center,cirlce_r);
-        detectRectangle(image);
+        //detectRectangle(image);
         if(image.empty())
         {
             std::cout<<"Image has no data!"<<std::endl;
@@ -106,9 +109,12 @@ void armor_detect_node::running(void)
         // Find the fianl armor.
         if (armor_detector == nullptr)
             armor_detector = std::shared_ptr<armor_detecter>(new armor_detecter(debug_on));
+        if (rectang_detector == nullptr)
+        	rectang_detector = std::shared_ptr<rectang_detecter>(new rectang_detecter(debug_on));
         if(forward_back && !image.empty())
         {
-            detected = armor_detector->detect(image, false);
+            //detected = armor_detector->detect(image, false);
+            detected = rectang_detector->detect(image, false);
         }
 
         if(detected)

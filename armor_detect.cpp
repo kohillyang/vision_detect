@@ -107,12 +107,20 @@ cv::Mat armor_detecter::highlight_blue_or_red(const cv::Mat &image, bool detect_
 std::vector<std::vector<cv::Point>> armor_detecter::find_contours(const cv::Mat &binary)
 {
     std::vector<std::vector<cv::Point>> contours; // 边缘
-    const auto mode = cv::RetrievalModes::RETR_EXTERNAL;
+    const auto mode = cv::RetrievalModes::RETR_LIST;//RETR_EXTERNAL;
     const auto method = cv::ContourApproximationModes::CHAIN_APPROX_SIMPLE;
     cv::findContours(binary, contours, mode, method);
     return contours;
 }
-
+std::vector<cv::RotatedRect> armor_detecter::point_to_rects(const std::vector<std::vector<cv::Point>> &contours)
+{
+	std::vector<cv::RotatedRect> rects; // 代表灯柱的矩形
+	for(unsigned int i = 0; i < contours.size(); ++i)
+	{
+		rects.push_back(cv::minAreaRect(contours[i]));
+	}
+	return rects;
+}
 std::vector<cv::RotatedRect> armor_detecter::to_light_rects(const std::vector<std::vector<cv::Point>> &contours_light, const std::vector<std::vector<cv::Point>> &contours_brightness)
 {
     speed_test_reset();
@@ -177,11 +185,12 @@ std::vector<cv::RotatedRect> armor_detecter::detect_lights(bool detect_blue)
     // 亮图灯柱周边颜色
     //speed_test_reset();
     auto light = highlight_blue_or_red(m_image, detect_blue); // 灯柱周边颜色高亮图
-     imshowd("light",light);
+     //imshowd("light",light);
     cv::threshold(m_gray, m_binary_brightness, 100, 255, cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
-     //imshowd("m_binary_brightness",m_binary_brightness);
+     imshowd("m_binary_brightness",m_binary_brightness);
     double thresh = detect_blue ? 90 : 50;
     cv::threshold(light, m_binary_color, thresh, 255, cv::ThresholdTypes::THRESH_BINARY); // 蓝色/红色二值图
+     imshowd("m_binary_color",m_binary_color);
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
     cv::dilate(m_binary_color, m_binary_color, element, cv::Point(-1, -1), 1);
     m_binary_light = m_binary_color & m_binary_brightness; // 两二值图交集
@@ -197,9 +206,18 @@ std::vector<cv::RotatedRect> armor_detecter::detect_lights(bool detect_blue)
     auto contours_brightness = find_contours(m_binary_brightness); // 灰度图灯轮廓
 #endif
 
+
     cv::Mat result = m_image_hql.clone();
-    drawContours(result,contours_light,-1, cv::Scalar(200, 100, 0),2);
+    cv::Mat result0 = m_image_hql.clone();
+    drawContours(result ,contours_light ,-1 , cv::Scalar(200, 100, 0) ,2);
     imshow("contours_light_result",result);
+
+
+    //drawContours(result0,contours_brightness,-1, cv::Scalar(0, 100, 200),2);
+    draw_rotated_rects(result0 ,point_to_rects(contours_light) , cv::Scalar(0,0,255) , 2 , true, cv::Scalar(255,0,0));
+    imshow("contours_light_rect_result",result0);
+
+
 
     return to_light_rects(contours_light, contours_brightness);
 }
@@ -412,23 +430,24 @@ bool armor_detecter::detect(const cv::Mat &image, bool detect_blue)
     {
         m_show = image.clone();
         possible_armor = image.clone();
-        light_img = image.clone();
+        light_img1 = image.clone();
+        light_img2 = image.clone();
     }
 
     cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);//gray
     imshowd("m_gray", m_gray);
 
     auto lights = detect_lights(detect_blue);
-    //std::cout<<"lights size"<<lights.size()<<std::endl;
 
-    //draw_rotated_rects(m_binary_brightness, lights, cv::Scalar(100), 2, true, cv::Scalar(100));
 
-    //speed_test_reset();
+    //draw_rotated_rects(light_img1,lights,cv::Scalar(200, 100, 0),2,true, cv::Scalar(255,0,0));
 
     lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area);
 
+
+
     if(debug_on_)
-        draw_rotated_rects(light_img, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
+        draw_rotated_rects(light_img2, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
     //  if (lights.size() <= 1)
     //  {
     //    return false;
@@ -486,9 +505,10 @@ void armor_detecter::slect_final_armor(std::vector<armor_info> all_armors)
 
 void armor_detecter::debug_vision()
 {
-    imshowd("light_img", light_img);
+    //imshowd("light_img1", light_img1);
+    imshowd("light_img2", light_img2);
     imshowd("possible_armor", possible_armor);
-    //imshowd("m_image", m_image);
+    imshowd("m_image", m_image);
     //imshowd("m_common", m_common);
     cv::waitKey(1);
 }
