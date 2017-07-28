@@ -61,8 +61,8 @@ private:
 
 	bool debug_on_;
 
-	rectandetect_info *rect;
-	rectandetect_info *old_armor;
+	rectandetect_info *finalrect;
+	rectandetect_info *old_finalrect;
 
 public:
 	rectang_detecter(bool debug_on);
@@ -82,6 +82,8 @@ public:
 	float point_distance(const cv::Point2f point,const cv::Point2f center);
 
 	float rectlongLean(const cv::RotatedRect &rect,float &w,float &h);
+
+	rectandetect_info* select_final_rectang(std::vector<rectandetect_info>& rectangs);
 
 	std::vector<rectandetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 

@@ -59,7 +59,7 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/15.avi");
     //cv::VideoCapture capture_camera_forward(0);
     if(!capture_camera_forward.isOpened())
     {
@@ -116,7 +116,7 @@ void armor_detect_node::running(void)
         if(forward_back && !image.empty())
         {
             //detected = armor_detector->detect(image, false);
-            detected = rectang_detector->detect(image, false);
+            detected = rectang_detector->detect(image, true);
         }
 
         if(detected)
