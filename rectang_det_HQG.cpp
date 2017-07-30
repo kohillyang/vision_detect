@@ -25,11 +25,11 @@ const float rectang_detecter::m_threshold_max_angle = 30.0f;
 
 const float rectang_detecter::m_threshold_min_area = 3.0f;
 
-const float rectang_detecter::m_threshold_max_area = 10000.0f;
+const float rectang_detecter::m_threshold_max_area = 6000.0f;
 
-const float rectang_detecter::threshold_line_binary = 4000.f;
+const float rectang_detecter::threshold_line_binary = 8000.f;
 
-const float rectang_detecter::threshold_line_binary_color = 3000.f;
+const float rectang_detecter::threshold_line_binary_color = 4500.f;
 
 rectandetect_info::rectandetect_info()
 {
@@ -149,16 +149,17 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	cv::threshold(m_gray, m_binary_brightness, thresh_binary, 255,
 			cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
 	thresh_binary = adjust_threshold_binary(m_binary_brightness,thresh_binary,threshold_line_binary);
-	thresh_binary = thresh_binary>190?190:thresh_binary;
-	thresh_binary = thresh_binary<160?160:thresh_binary;
+	thresh_binary = thresh_binary>160?160:thresh_binary;
+	thresh_binary = thresh_binary<110?110:thresh_binary;
+	std::cout<<"thresh_binary:"<<thresh_binary<<std::endl;
 
 	double thresh = detect_blue ? 50 : 80;
 	static float thresh_binary_color=50;
 	cv::threshold(light, m_binary_color, thresh_binary_color, 255,
 			cv::ThresholdTypes::THRESH_BINARY); // 蓝色/红色二值图
 	thresh_binary_color = adjust_threshold_binary(m_binary_color,thresh_binary_color,threshold_line_binary_color);
-	thresh_binary_color=thresh_binary_color>110?110:thresh_binary_color;
-	thresh_binary_color=thresh_binary_color<40?40:thresh_binary_color;
+	thresh_binary_color=thresh_binary_color>90?90:thresh_binary_color;
+	thresh_binary_color=thresh_binary_color<30?30:thresh_binary_color;
 	imshowd("m_binary_light", m_binary_color);
 
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
@@ -196,7 +197,7 @@ std::vector<cv::RotatedRect> rectang_detecter::filter_lights(const std::vector<c
 
 		if (whratio > 3.0f / 2.0f|| whratio < 2.0f / 3.0f) {
 			float w, h;
-			if (rectlongLean(rect, w, h) < thresh_max_angle) {
+			if (abs(rectlongLean(rect, w, h)) < thresh_max_angle) {
 
 				//std::cout<<"Angle: "<<angle<<std::endl;
 				if (rect.size.area() >= thresh_min_area
@@ -221,11 +222,20 @@ float rectang_detecter::rectlongLean(const cv::RotatedRect &rect,float &w,float 
 	w = point_distance(vertex[0],vertex[1]);
 	h = point_distance(vertex[1],vertex[2]);
 	float angle = 0;
-	if(w > h){
-		std::swap(w,h);
-		angle = std::abs(std::abs(std::atan2(vertex[1].y-vertex[0].y,vertex[1].x-vertex[0].x)) * 180/3.141592653-90);
-	}else{
-		angle = std::abs(std::abs(std::atan2(vertex[1].y-vertex[2].y,vertex[1].x-vertex[2].x)) * 180/3.141592653 - 90);
+	if (w > h)
+	{
+		std::swap(w, h);
+		//angle = std::abs(std::abs(std::atan2(vertex[1].y-vertex[0].y,vertex[1].x-vertex[0].x)) * 180/3.141592653-90);
+		angle = atan2(-(vertex[1].y - vertex[0].y), vertex[1].x - vertex[0].x) * 180 / 3.141592653;
+		angle = angle > 0 ? angle : angle + 180;
+		angle = 90 - angle;
+	}
+	else
+	{
+		//angle = std::abs(std::abs(std::atan2(vertex[1].y-vertex[2].y,vertex[1].x-vertex[2].x)) * 180/3.141592653 - 90);
+		angle = atan2(-(vertex[1].y - vertex[2].y), vertex[1].x - vertex[2].x) * 180 / 3.141592653;
+		angle = angle > 0 ? angle : angle + 180;
+		angle = 90 - angle;
 	}
 	return angle;
 }
@@ -243,26 +253,25 @@ std::vector<rectandetect_info> rectang_detecter::detect_select_rect(const std::v
 
 
 
-			if(//abs(ang1-ang2)<15
-					abs(h1-h2) < 0.5*h_
+			if(		abs(ang1-ang2)<20 &&
+					abs(h1-h2) < 0.7*h_
 					//&&abs(w1-w2)<w_/4
 					)//delta h , w ,ang
 			{
 
-				if(abs(light1.center.x - light2.center.x) < 3.5*h_&& abs(light1.center.x - light2.center.x) > 0.8*h_
-					&&abs(light1.center.y - light2.center.y) < 0.5*(1 + ang_/45)*h_ )    //delta x ,y
+				if(abs(light1.center.x - light2.center.x) < 3.5*h_ && abs(light1.center.x - light2.center.x) > 0.8*h_
+					&& abs(light1.center.y - light2.center.y) < 0.7*(1 + ang_/40)*h_ )    //delta x ,y
 				{
 
-					draw_rotated_rect(final_rectang, light1, cv::Scalar(255,0,255), 2);
-					draw_rotated_rect(final_rectang, light2, cv::Scalar(255,0,255), 2);
-
 		            cv::RotatedRect rect;
-		            rect.angle = 0;
+		            rect.angle = ang_;
 		            rect.center.x = (light1.center.x + light2.center.x) / 2;
 		            rect.center.y = (light1.center.y + light2.center.y) / 2;
 		            rect.size.width = 1.2*abs(light1.center.x - light2.center.x);
 		            rect.size.height = 1.5*h_;
 
+		            float ww, hh ,angg;
+		            angg = rectlongLean(rect, ww, hh);
 
 					cv::Point2f vertex[4];
 					rect.points(vertex);
@@ -283,8 +292,12 @@ std::vector<rectandetect_info> rectang_detecter::detect_select_rect(const std::v
 //					}
 					rectangs.push_back(rectandetect_info(rect, vecpoint, light1,light2, totallost));
 				}
+				else
+				{}
 
 			}
+			else
+			{}
 
 		}
 	}
@@ -350,11 +363,9 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
     lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area,m_threshold_max_area);
 
     draw_rotated_rects(light_img, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
-
     imshow("light_img",light_img);
 
     auto Rectangs = detect_select_rect(lights);
-
 
     finalrect=select_final_rectang(Rectangs);
 

@@ -6,6 +6,7 @@
 #define USE_OPENCV
 #endif
 #ifdef USE_OPENCV
+#include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -17,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+using namespace cv;
 using namespace caffe;  // NOLINT(build/namespaces)
 using std::string;
 
@@ -51,10 +53,11 @@ class Classifier {
   std::vector<string> labels_;
 };
 
-Classifier::Classifier(const string& model_file,
-                       const string& trained_file,
-                       const string& mean_file,
-                       const string& label_file) {
+Classifier::Classifier(const string& model_file,//the network.
+                       const string& trained_file,//network
+                       const string& mean_file,//the binaryproto mean file.
+                       const string& label_file) //labels
+{
 #ifdef CPU_ONLY
   Caffe::set_mode(Caffe::CPU);
 #else
@@ -231,19 +234,43 @@ void Classifier::Preprocess(const cv::Mat& img,
         == net_->input_blobs()[0]->cpu_data())
     << "Input channels are not wrapping the input layer of the network.";
 }
-int test(){
-	string caffe_root = "/home/kohill/tx1/backup/caffe-master/";
-	  string model_file   = caffe_root + "lenet_train_test.prototxt";
-	  string trained_file = caffe_root + "lenet_iter_20000.caffemodel";
-	  string mean_file    = caffe_root + "mean.binaryproto";
-	  string label_file   = caffe_root + "data/ilsvrc12/synset_words.txt";
-	  Classifier classifier(model_file, trained_file, mean_file, label_file);
-	  string file = caffe_root + "examples/images/cat.jpg";
+int testcaffe()
+{
+	string caffe_root = "/home/kohill/tx1/backup/caffe-master/examples/mnist/";
+	string model_file = caffe_root + "lenet.prototxt";
+	string trained_file = caffe_root + "lenet_iter_20000.caffemodel";
+	string mean_file = caffe_root + "mean.binaryproto";
+	string label_file = caffe_root + "mnistlabel.txt";
+	Classifier classifier(model_file, trained_file, mean_file, label_file);
+
+	static int count;
+	count++;
+	count=count<1?1:count;count=count>16?1:count;
+	string NumString = static_cast<ostringstream*>( &(ostringstream() << count) )->str();
+	string file = "/home/kohill/Desktop/caffe data/cl/1/i_img_write10544.png";
+
+	cv::Mat IMG = cv::imread(file, 0);
+	cv::Mat img = Mat(28,28,0);
+	//imshow("pic1", IMG);
+
+	cv::Rect a = cv::Rect(25, 7, 14, 12);
+
+
+	if(!IMG.empty())
+	{
+		IMG = IMG(a);
+		Size dsize = Size(28,28);
+		resize(IMG,img,dsize);
+		cv::threshold(img, img, 140, 255,cv::ThresholdTypes::THRESH_BINARY_INV);
+
+		imshow("pic2", img);
+	}
+	cv::waitKey(5);
 
 	  std::cout << "---------- Prediction for "
 	            << file << " ----------" << std::endl;
 
-	  cv::Mat img = cv::imread(file, -1);
+
 	  CHECK(!img.empty()) << "Unable to decode image " << file;
 	  std::vector<Prediction> predictions = classifier.Classify(img);
 
@@ -254,6 +281,8 @@ int test(){
 	              << p.first << "\"" << std::endl;
 	  }
 }
+
+
 //int main(int argc, char** argv) {
 //  if (argc != 6) {
 //    std::cerr << "Usage: " << argv[0]

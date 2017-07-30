@@ -6,14 +6,22 @@
 #include "labeler.h"
 #include "video_recoder.h"
 #include <memory>
+#include <algorithm>
 #include <math.h>
+#include <iosfwd>
+#include <string>
 #include "circle_detect.hpp"
 #include "detect_HQG.hpp"
 #define _DEBUG_VISION
+
+extern int testcaffe(void);
+
 namespace autocar
 {
 namespace vision_mul
 {
+
+
 armor_detect_node::armor_detect_node(void)
 {
 
@@ -57,16 +65,24 @@ armor_detect_node::~armor_detect_node(void)
 
 void armor_detect_node::running(void)
 {
+	double runtime;
 	this->debug_on = true;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/15.avi");
-    //cv::VideoCapture capture_camera_forward(0);
+    //cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
+    cv::VideoCapture capture_camera_forward(0);
+    //capture_camera_forward.open(0);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+    capture_camera_forward.set(CV_CAP_PROP_FPS, 60);
+
+    //double fps = cv::cvGetCaptureProperty(capture_camera_forward,CV_CAP_PROP_FPS);
+    //capture_camera_forward.set(CV_CAP_PROP_AUTO_EXPOSURE,100);
     if(!capture_camera_forward.isOpened())
     {
         std::cout<<"Cannot open the camera!"<<std::endl;
         return;
     }
-    set_camera_exposure("/dev/video0", 100);
+    set_camera_exposure("/dev/video0", 50);
     //{
     //  while (true) {
     //    boost::this_thread::sleep_for(boost::chrono::seconds(10));
@@ -74,7 +90,7 @@ void armor_detect_node::running(void)
     //}
 
 
-    cv::VideoCapture capture_camera_back("/home/dji/Videos/armor_20170405_170846.avi");
+    //cv::VideoCapture capture_camera_back("/home/dji/Videos/armor_20170405_170846.avi");
     std::shared_ptr<armor_detecter> armor_detector;
     std::shared_ptr<rectang_detecter> rectang_detector;
     std::shared_ptr<labeler> label;
@@ -88,11 +104,20 @@ void armor_detect_node::running(void)
 
     std::vector<cv::RotatedRect> hql_lights;
 
+
+
     for (;;)
     {
         //cv::waitKey(150);
+    	static unsigned int timecount = 0;
+    	timecount++;
+    	std::cout<<timecount<<std::endl;
 
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
+
+
+    	cv::getTickFrequency();
+    	runtime = (double)cv::getTickCount();
         //if(forward_back)
         capture_camera_forward >> image;
         cv::Point2f circle_center;
@@ -115,9 +140,14 @@ void armor_detect_node::running(void)
         	rectang_detector = std::shared_ptr<rectang_detecter>(new rectang_detecter(debug_on));
         if(forward_back && !image.empty())
         {
-            //detected = armor_detector->detect(image, false);
-            detected = rectang_detector->detect(image, true);
+                            //detected = armor_detector->detect(image, false);
+            detected = rectang_detector->detect(image, false);
         }
+
+
+        //testcaffe();
+
+
 
         if(detected)
         {

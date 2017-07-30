@@ -1,7 +1,7 @@
-﻿#include <ros/ros.h>
-#include <vision_unit/SetGoal.h>
-#include <iostream>
-#include <opencv2/opencv.hpp>
+﻿//#include <ros/ros.h>
+//#include <vision_unit/SetGoal.h>
+//#include <iostream>
+//#include <opencv2/opencv.hpp>
 #include "util.h"
 #include "draw.h"
 #include "debug_utility.hpp"
@@ -23,11 +23,9 @@ int main(int argc, char **argv)
   {
     std::cout << ex.what() << std::endl;
   }
-  extern int test(void);
-  test();
+  //extern int testcaffe(void);
+  //testcaffe();
   return 0;
 }
-
-
 
 
