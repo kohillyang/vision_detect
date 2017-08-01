@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Threads REQUIRED)
 find_package(OpenCV REQUIRED)
-# find_package(Caffe)
 find_package(PythonLibs 2.7 REQUIRED)
 
 add_message_files(
@@ -77,9 +76,3 @@ add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	/usr/lib/x86_64-linux-gnu/libpython2.7.so
 )
 
-add_executable(rune_detect
-    src/detect_factory/rune_detect.cpp
-    src/detect_factory/rune_detect_node.cpp
-    )
-add_dependencies(rune_detect ${catkin_EXPORTED_TARGETS})
-target_link_libraries(rune_detect ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES} ${Caffe_LIBRARIES})
