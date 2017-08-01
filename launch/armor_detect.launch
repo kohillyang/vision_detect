@@ -1,0 +1,5 @@
+<launch>
+  <node name="armor_detect" pkg="vision_unit" type="armor_detect" output="screen">
+  	<param name="debug_on" type = "bool" value = "true" />  
+  </node>
+</launch>
