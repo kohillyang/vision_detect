@@ -18,7 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Threads REQUIRED)
 find_package(OpenCV REQUIRED)
-find_package(Caffe)
+# find_package(Caffe)
 find_package(PythonLibs 2.7 REQUIRED)
 
 add_message_files(

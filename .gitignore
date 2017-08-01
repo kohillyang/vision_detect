@@ -4,7 +4,6 @@ cmake
 CMakeFiles
 devel
 gtest
-include
 test_results
 .csettings
 .settings
