@@ -1,14 +1,14 @@
-﻿#include <ros/ros.h>
-#include <vision_unit/SetGoal.h>
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include "util.h"
-#include "draw.h"
-#include "debug_utility.hpp"
-#include "armor_detect.h"
-#include "armor_detect_node.h"
-#include <geometry_msgs/PoseStamped.h>
-#include <vision_unit/armor_msg.h>
+﻿//#include <ros/ros.h>
+//#include <vision_unit/SetGoal.h>
+//#include <iostream>
+//#include <opencv2/opencv.hpp>
+//#include "util.h"
+//#include "draw.h"
+//#include "debug_utility.hpp"
+//#include "armor_detect.h"
+//#include "armor_detect_node.h"
+//#include <geometry_msgs/PoseStamped.h>
+//#include <vision_unit/armor_msg.h>
 
 //int main(int argc, char **argv)
 //{
@@ -29,10 +29,15 @@
 
 
 
-
-
-
-#include "cv.h"
+#include "debug_utility.hpp"
+#include "util.h"
+#include "draw.h"
+#include "vision_unit/armor_msg.h"
+#include "labeler.h"
+#include "video_recoder.h"
+#include <memory>
+#include <math.h>
+#include <opencv2/opencv.hpp>
 #include "cxcore.h"
 #include "highgui.h"
 #include <iostream>
@@ -40,10 +45,13 @@
 using namespace std;
 int main()
 {
-    CvCapture* capture=cvCaptureFromCAM(-1);
+    struct CvCapture* capture=cvCaptureFromCAM(-1);
+    cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_WIDTH,800);
+    cvSetCaptureProperty(capture,CV_CAP_PROP_FRAME_HEIGHT,600);
     CvVideoWriter* video=NULL;
     IplImage* frame=NULL;
     unsigned int ex_count = 0;
+    unsigned int success = 0;
     autocar::vision_mul::set_camera_exposure("/dev/video0", 50);
     int n;
     if(!capture) //如果不能打开摄像头给出警告
@@ -54,7 +62,7 @@ int main()
     else
     {
        frame=cvQueryFrame(capture); //首先取得摄像头中的一帧
-        video=cvCreateVideoWriter("/home/kohill/vision_dataset/15.avi", CV_FOURCC('X', 'V', 'I', 'D'), 25,
+        video=cvCreateVideoWriter("/home/kohill/vision_dataset/16.avi", CV_FOURCC('X', 'V', 'I', 'D'), 25,
        cvSize(frame->width,frame->height)); //创建CvVideoWriter对象并分配空间
  //保存的文件名为camera.avi，编码要在运行程序时选择，大小就是摄像头视频的大小，帧频率是32
        if(video) //如果能创建CvVideoWriter对象则表明成功
@@ -66,8 +74,10 @@ int main()
         int i = 0;
        while(i <= 20000000) // 让它循环200次自动停止录取
         {
+
     	    //autocar::vision_mul::set_camera_exposure("/dev/video0", 100+(0x01 & ex_count)*50 );
-    	    ex_count ++;
+    	   success++;
+    	  std::cout<<ex_count ++<<std::endl;
           frame=cvQueryFrame(capture); //从CvCapture中获得一帧
            if(!frame)
           {
@@ -75,10 +85,10 @@ int main()
              break;
           }
           n=cvWriteFrame(video,frame); //判断是否写入成功，如果返回的是1，表示写入成功
-           cout<<n<<endl;
+           cout<<success<<endl;
           cvShowImage("Camera Video",frame); //显示视频内容的图片
            i++;
-          if(cvWaitKey(2)>0)
+          if(cvWaitKey(1)>0)
              break; //有其他键盘响应，则退出
        }
 

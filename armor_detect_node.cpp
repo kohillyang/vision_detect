@@ -87,6 +87,7 @@ void armor_detect_node::running(void)
     {
         //cv::waitKey(500);
 
+
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         //if(forward_back)
         capture_camera_forward >> image;
