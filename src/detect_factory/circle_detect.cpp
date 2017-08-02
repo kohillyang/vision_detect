@@ -36,11 +36,24 @@ class PyCircleDetect{
 private:
     PyObject *p_detect;
 public:
+    static std::string getResAbsolutePath(){
+    	char currentFileName[]=__FILE__;
+    	int fileNameLen = strlen(currentFileName);
+    	do{
+    		if(currentFileName[fileNameLen] == '/' ||
+    				currentFileName[fileNameLen] == '\\' ){
+    			break;
+    		}else{currentFileName[fileNameLen]=0;}
+    	}while(fileNameLen--);
+    	string resFilePath = string(currentFileName) + "detect_res/";
+    	return resFilePath;
+    }
+
     PyCircleDetect(){
         cout << "start loading Python Module..." << endl;
         Py_Initialize();
         PyRun_SimpleString("import sys,os");
-        PyRun_SimpleString("sys.path.append('/home/kohill/kohillyang/detect_res/')");
+        PyRun_SimpleString((string("sys.path.append('")+getResAbsolutePath()+"')").data());
         PyRun_SimpleString("import trainAndTest");
         PyObject* moduleName = PyString_FromString("trainAndTest");
         PyObject* pModule = PyImport_Import(moduleName);
