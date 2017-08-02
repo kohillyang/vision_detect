@@ -13,10 +13,10 @@ namespace autocar
 {
 namespace vision_mul
 {
-class rectandetect_info
+class rectangdetect_info
 {
 public:
-	rectandetect_info(cv::RotatedRect rect_, std::vector<cv::Point2f> points_, cv::RotatedRect left_=cv::RotatedRect(), cv::RotatedRect right_=cv::RotatedRect(), float lost_ = 10000.0)
+	rectangdetect_info(cv::RotatedRect rect_, std::vector<cv::Point2f> points_, cv::RotatedRect left_=cv::RotatedRect(), cv::RotatedRect right_=cv::RotatedRect(), float lost_ = 10000.0)
   {
     type = true;
     rect = rect_;
@@ -26,7 +26,7 @@ public:
     score = 0.0f;
     lost = lost_;
   }
-	rectandetect_info();
+	rectangdetect_info();
   bool type;
   cv::RotatedRect rect;
   std::vector<cv::Point2f> points;
@@ -61,8 +61,8 @@ private:
 
 	bool debug_on_;
 
-	rectandetect_info *finalrect;
-	rectandetect_info *old_finalrect;
+	rectangdetect_info *finalrect;
+	rectangdetect_info *old_finalrect;
 
 public:
 	rectang_detecter(bool debug_on);
@@ -83,13 +83,13 @@ public:
 
 	float rectlongLean(const cv::RotatedRect &rect,float &w,float &h);
 
-	rectandetect_info* select_final_rectang(std::vector<rectandetect_info>& rectangs);
+	rectangdetect_info* select_final_rectang(std::vector<rectangdetect_info>& rectangs);
 
-	std::vector<rectandetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
+	std::vector<rectangdetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
 	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, float thresh_max_angle, float thresh_min_area, float thresh_max_area);
 
-	std::vector<cv::RotatedRect> detect_enemy_light(const cv::Mat &image, bool detect_blue);
+	std::vector<rectangdetect_info> detect_enemy(const cv::Mat &image, bool detect_blue);
 
 	bool detect(const cv::Mat &image, bool detect_blue);
 };

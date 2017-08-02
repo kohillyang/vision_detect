@@ -65,14 +65,18 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/15.avi");
-//    cv::VideoCapture capture_camera_forward(0);
+    //cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
+    cv::VideoCapture capture_camera_forward(0);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+
     if(!capture_camera_forward.isOpened())
     {
         std::cout<<"Cannot open the camera!"<<std::endl;
         return;
     }
-    set_camera_exposure("/dev/video0", 100);
+    set_camera_exposure("/dev/video0", 50);
     //{
     //  while (true) {
     //    boost::this_thread::sleep_for(boost::chrono::seconds(10));

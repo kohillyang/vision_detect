@@ -34,56 +34,57 @@ using namespace cv;
 using namespace std;
 class PyCircleDetect{
 private:
-    PyObject *p_detect;
+//    PyObject *p_detect;
 public:
     PyCircleDetect(){
-        cout << "start loading Python Module..." << endl;
-        Py_Initialize();
-        PyRun_SimpleString("import sys,os");
-        PyRun_SimpleString("sys.path.append('/home/kohill/kohillyang/detect_res/')");
-        PyRun_SimpleString("import trainAndTest");
-        PyObject* moduleName = PyString_FromString("trainAndTest");
-        PyObject* pModule = PyImport_Import(moduleName);
-        if (!pModule) // 加载模块失败
-        {
-            cerr << "[ERROR] Python get module failed." << endl;
-            exit(-1);
-        }
-        PyObject* pv_init = PyObject_GetAttrString(pModule, "init");
-        if (!pv_init || !PyCallable_Check(pv_init))
-        {
-            cout << "[ERROR] Can't find function (init)" << endl;
-        }
-        PyObject* pInitArg = PyTuple_New(0);
-        PyObject_CallObject(pv_init,NULL);
-        p_detect = PyObject_GetAttrString(pModule, "detect");
-        if (!p_detect || !PyCallable_Check(p_detect))
-        {
-            cout << "[ERROR] Can't find function (detect)" << endl;
-        }
-        cout << "Python Module load Finished." << endl;
+//        cout << "start loading Python Module..." << endl;
+//        Py_Initialize();
+//        PyRun_SimpleString("import sys,os");
+//        PyRun_SimpleString("sys.path.append('/home/kohill/kohillyang/detect_res/')");
+//        PyRun_SimpleString("import trainAndTest");
+//        PyObject* moduleName = PyString_FromString("trainAndTest");
+//        PyObject* pModule = PyImport_Import(moduleName);
+//        if (!pModule) // 加载模块失败
+//        {
+//            cerr << "[ERROR] Python get module failed." << endl;
+//            exit(-1);
+//        }
+//        PyObject* pv_init = PyObject_GetAttrString(pModule, "init");
+//        if (!pv_init || !PyCallable_Check(pv_init))
+//        {
+//            cout << "[ERROR] Can't find function (init)" << endl;
+//        }
+//        PyObject* pInitArg = PyTuple_New(0);
+//        PyObject_CallObject(pv_init,NULL);
+//        p_detect = PyObject_GetAttrString(pModule, "detect");
+//        if (!p_detect || !PyCallable_Check(p_detect))
+//        {
+//            cout << "[ERROR] Can't find function (detect)" << endl;
+//        }
+//        cout << "Python Module load Finished." << endl;
 
     }
     int detect(cv::Mat &img){
-        cv::Mat m_gray;
-        cv::cvtColor(img, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
-        cv::resize(m_gray, m_gray, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
-        PyObject* args = PyTuple_New(1);
-        PyObject *pListArg1 = PyList_New(0);
-        for(int i = 0;i< 64 * 32;i++){
-            PyObject *p = Py_BuildValue("b",m_gray.data[i]);
-            PyList_Append(pListArg1,p);
-        }
-        PyTuple_SetItem(args,0,pListArg1);
-        PyObject *r_object = PyObject_CallObject(p_detect, args);
-        int r_py;
-        if(r_object){
-        	PyArg_Parse(r_object,"i",&r_py);
-        }
-        return r_py;
+//        cv::Mat m_gray;
+//        cv::cvtColor(img, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
+//        cv::resize(m_gray, m_gray, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
+//        PyObject* args = PyTuple_New(1);
+//        PyObject *pListArg1 = PyList_New(0);
+//        for(int i = 0;i< 64 * 32;i++){
+//            PyObject *p = Py_BuildValue("b",m_gray.data[i]);
+//            PyList_Append(pListArg1,p);
+//        }
+//        PyTuple_SetItem(args,0,pListArg1);
+//        PyObject *r_object = PyObject_CallObject(p_detect, args);
+//        int r_py;
+//        if(r_object){
+//        	PyArg_Parse(r_object,"i",&r_py);
+//        }
+//        return r_py;
+    	return 0;
     }
     ~PyCircleDetect(){
-        Py_Finalize();
+//        Py_Finalize();
     }
 };
 static PyCircleDetect pythonCircleDetector;
@@ -241,51 +242,56 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	std::vector<cv::Point2f> centers;
 	std::vector<float> radiuse;
 
-	std::vector<cv::RotatedRect> rects = recDetector.detect_enemy_light(img,true);
-	auto rectangs = recDetector.detect_select_rect(rects);
+	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
 
-
-	std::vector<cv::RotatedRect> rects_last;
-	std::vector<float> delta_last;
-//	static int i_img_write = 0;
-	for(auto x = rectangs.begin();x!=rectangs.end();x++){
-		auto rect = x->rect.boundingRect();
-		if(rect.br().x < img.size().width&& rect.br().y < img.size().height
-			&& rect.tl().x > 0 && rect.tl().y > 0
-		){
-			auto image_sub_sub =img(rect);
-			if(pythonCircleDetector.detect(image_sub_sub)){
-				rects_last.push_back(x->rect);
-				delta_last.push_back(0);
-			}else{
-			}
-		}else{
-			cerr << "over flow.." <<endl;
-		}
-	}
-	for(int i = 0;i<rects_last.size();i++){
-		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
-			if(delta_last[j] >delta_last[j+1] ){
-				std::swap(delta_last[j],delta_last[j+1]);
-				std::swap(rects_last[j],rects_last[j+1]);
-			}
-		}
-	}
-	if(rects_last.size()> 0 ){
-		rect_out = rects_last[0];
-		return true;
-	}else{
-		float x_center =0.0;
-		float y_center =0.0;
-		std::sort(rectangs.begin(),rectangs.end(),
-				[](const rectandetect_info &p1,const rectandetect_info &p2)
-				{return p1.lost < p2.lost;});
-		if(rectangs.size()>0){
-			rect_out =rectangs[0].rect;
-			return true;
-		}
-		return false;
-	}
+//	std::vector<cv::RotatedRect> rects_last;
+//	std::vector<float> delta_last;
+////	static int i_img_write = 0;
+//	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
+//	{
+//		auto rect = x->rect.boundingRect();
+//		if (rect.br().x < img.size().width && rect.br().y < img.size().height
+//				&& rect.tl().x > 0 && rect.tl().y > 0)
+//		{
+//			auto image_sub_sub = img(rect);
+//			if (pythonCircleDetector.detect(image_sub_sub))
+//			{
+//				rects_last.push_back(x->rect);
+//				delta_last.push_back(0);
+//			}
+//			else
+//			{
+//			}
+//		}
+//		else
+//		{
+//			cerr << "over flow.." << endl;
+//		}
+//	}
+//	for(int i = 0;i<rects_last.size();i++){
+//		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
+//			if(delta_last[j] >delta_last[j+1] ){
+//				std::swap(delta_last[j],delta_last[j+1]);
+//				std::swap(rects_last[j],rects_last[j+1]);
+//			}
+//		}
+//	}
+//	if(rects_last.size()> 0 ){
+//		rect_out = rects_last[0];
+//		return true;
+//	}else{
+//		float x_center =0.0;
+//		float y_center =0.0;
+//		std::sort(rectangs.begin(),rectangs.end(),
+//				[](const rectandetect_info &p1,const rectandetect_info &p2)
+//				{return p1.lost < p2.lost;});
+//		if(rectangs.size()>0){
+//			rect_out =rectangs[0].rect;
+//			return true;
+//		}
+//		return false;
+//	}
+	return false;
 }
 
 
