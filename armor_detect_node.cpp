@@ -68,12 +68,11 @@ void armor_detect_node::running(void)
 	double runtime;
 	this->debug_on = true;
     cv::Mat image;
-    //cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
-    cv::VideoCapture capture_camera_forward(0);
-    //capture_camera_forward.open(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
-    capture_camera_forward.set(CV_CAP_PROP_FPS, 60);
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
+//    cv::VideoCapture capture_camera_forward(0);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+//    capture_camera_forward.set(CV_CAP_PROP_FPS, 60);
 
     //double fps = cv::cvGetCaptureProperty(capture_camera_forward,CV_CAP_PROP_FPS);
     //capture_camera_forward.set(CV_CAP_PROP_AUTO_EXPOSURE,100);
