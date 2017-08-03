@@ -149,7 +149,7 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	cv::threshold(m_gray, m_binary_brightness, thresh_binary, 255,
 			cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
 	thresh_binary = adjust_threshold_binary(m_binary_brightness,thresh_binary,threshold_line_binary);
-	thresh_binary = thresh_binary>160?160:thresh_binary;
+	thresh_binary = thresh_binary>210?210:thresh_binary;
 	thresh_binary = thresh_binary<110?110:thresh_binary;
 	std::cout<<"thresh_binary:"<<thresh_binary<<std::endl;
 
@@ -160,7 +160,7 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	thresh_binary_color = adjust_threshold_binary(m_binary_color,thresh_binary_color,threshold_line_binary_color);
 	thresh_binary_color=thresh_binary_color>90?90:thresh_binary_color;
 	thresh_binary_color=thresh_binary_color<30?30:thresh_binary_color;
-	imshowd("m_binary_light", m_binary_color);
+	// imshowd("m_binary_light", m_binary_color);
 
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
 	cv::dilate(m_binary_color, m_binary_color, element, cv::Point(-1, -1), 1);
@@ -337,7 +337,7 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_enemy_light(const cv::Mat 
 
     draw_rotated_rects(light_img, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
 
-    imshow("light_img",light_img);
+    // imshow("light_img",light_img);
 
     auto Rectang = detect_select_rect(lights);
 
@@ -363,7 +363,7 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
     lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area,m_threshold_max_area);
 
     draw_rotated_rects(light_img, lights, cv::Scalar(0,0,255), 2, true, cv::Scalar(255,0,0));
-    imshow("light_img",light_img);
+    // imshow("light_img",light_img);
 
     auto Rectangs = detect_select_rect(lights);
 
@@ -374,7 +374,7 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
     		draw_rotated_rect(final_rectang, it.rect, cv::Scalar(250, 100, 0), 2);
     }
     draw_rotated_rect(final_rectang, finalrect->rect, cv::Scalar(0, 255, 47), 2);
-    imshow("final_rectang",final_rectang);
+    // imshow("final_rectang",final_rectang);
 
 	return false;
 

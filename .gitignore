@@ -22,3 +22,6 @@ tags
 .cproject
 .project
 build
+src/detect_factory/detect_res/cl/*
+
+*.png

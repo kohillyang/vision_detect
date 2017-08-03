@@ -472,9 +472,9 @@ void armor_detecter::slect_final_armor(std::vector<armor_info> all_armors)
 
 void armor_detecter::debug_vision()
 {
-    imshowd("light_img", light_img);
-    imshowd("possible_armor", possible_armor);
-    imshowd("m_image", m_image);
+    // imshowd("light_img", light_img);
+    // imshowd("possible_armor", possible_armor);
+    // imshowd("m_image", m_image);
     //imshowd("m_common", m_common);
     cv::waitKey(1);
 }

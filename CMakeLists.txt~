@@ -72,6 +72,6 @@ add_executable(armor_detect
 add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	target_link_libraries(armor_detect 
 	${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES} 
-	/usr/lib/arm-linux-gnueabihf/libpython2.7.so
+/usr/lib/arm-linux-gnueabihf/libpython2.7.so
 )
 
