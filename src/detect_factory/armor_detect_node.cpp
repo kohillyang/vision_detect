@@ -65,11 +65,10 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-    //cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
-    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
-
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/13.avi");
+//    cv::VideoCapture capture_camera_forward(0);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
 
     if(!capture_camera_forward.isOpened())
     {
@@ -97,7 +96,7 @@ void armor_detect_node::running(void)
     {
     	auto speed_test_start_begin_time = std::chrono::system_clock::now();
         capture_camera_forward >> image;
-        cv::waitKey(1);
+
         cv::Point2f circle_center;
         float cirlce_r;
         if(image.empty())
@@ -140,7 +139,7 @@ void armor_detect_node::running(void)
             }
         	pub_armor_pos.publish(armor_pos);
         }
-
+        cv::waitKey(5);
     }
 }
 
