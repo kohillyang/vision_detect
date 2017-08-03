@@ -1,55 +1,64 @@
 #ifndef CPU_ONLY
 #define CPU_ONLY
 #endif
-#include <caffe/caffe.hpp>
+#include "digital_classification.hpp"
+
 #ifndef USE_OPENCV
 #define USE_OPENCV
 #endif
 #ifdef USE_OPENCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#endif  // USE_OPENCV
-#include <algorithm>
-#include <iosfwd>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
 
+#endif  // USE_OPENCV
+
+
+using namespace cv;
 using namespace caffe;  // NOLINT(build/namespaces)
 using std::string;
 
 
 /* Pair (label, confidence) representing a prediction. */
-typedef std::pair<string, float> Prediction;
 
-class Classifier {
- public:
-  Classifier(const string& model_file,
-             const string& trained_file,
-             const string& mean_file,
-             const string& label_file);
+Classifier::Classifier()
+{
+	string caffe_root = "/home/kohill/mnist/";
+	string model_file = caffe_root + "lenet.prototxt";
+	string trained_file = caffe_root + "lenet_iter_20000.caffemodel";
+	string mean_file = caffe_root + "mean.binaryproto";
+	string label_file = caffe_root + "mnistlabel.txt";
 
-  std::vector<Prediction> Classify(const cv::Mat& img, int N = 5);
+#ifdef CPU_ONLY
+  Caffe::set_mode(Caffe::CPU);
+#else
+  Caffe::set_mode(Caffe::GPU);
+#endif
 
- private:
-  void SetMean(const string& mean_file);
+  /* Load the network. */
+  net_.reset(new Net<float>(model_file, TEST));
+  net_->CopyTrainedLayersFrom(trained_file);
 
-  std::vector<float> Predict(const cv::Mat& img);
+  CHECK_EQ(net_->num_inputs(), 1) << "Network should have exactly one input.";
+  CHECK_EQ(net_->num_outputs(), 1) << "Network should have exactly one output.";
 
-  void WrapInputLayer(std::vector<cv::Mat>* input_channels);
+  Blob<float>* input_layer = net_->input_blobs()[0];
+  num_channels_ = input_layer->channels();
+  CHECK(num_channels_ == 3 || num_channels_ == 1)
+    << "Input layer should have 1 or 3 channels.";
+  input_geometry_ = cv::Size(input_layer->width(), input_layer->height());
 
-  void Preprocess(const cv::Mat& img,
-                  std::vector<cv::Mat>* input_channels);
+  /* Load the binaryproto mean file. */
+  SetMean(mean_file);
 
- private:
-  shared_ptr<Net<float> > net_;
-  cv::Size input_geometry_;
-  int num_channels_;
-  cv::Mat mean_;
-  std::vector<string> labels_;
-};
+  /* Load labels. */
+  std::ifstream labels(label_file.c_str());
+  CHECK(labels) << "Unable to open labels file " << label_file;
+  string line;
+  while (std::getline(labels, line))
+    labels_.push_back(string(line));
+
+  Blob<float>* output_layer = net_->output_blobs()[0];
+  CHECK_EQ(labels_.size(), output_layer->channels())
+    << "Number of labels is different from the output layer dimension.";
+}
 
 Classifier::Classifier(const string& model_file,
                        const string& trained_file,
@@ -231,19 +240,77 @@ void Classifier::Preprocess(const cv::Mat& img,
         == net_->input_blobs()[0]->cpu_data())
     << "Input channels are not wrapping the input layer of the network.";
 }
-int test(){
-	string caffe_root = "/home/kohill/tx1/backup/caffe-master/";
-	  string model_file   = caffe_root + "lenet_train_test.prototxt";
-	  string trained_file = caffe_root + "lenet_iter_20000.caffemodel";
-	  string mean_file    = caffe_root + "mean.binaryproto";
-	  string label_file   = caffe_root + "data/ilsvrc12/synset_words.txt";
-	  Classifier classifier(model_file, trained_file, mean_file, label_file);
-	  string file = caffe_root + "examples/images/cat.jpg";
+
+string Classifier::classify_mnist(const cv::Mat& IMG)
+{
+	cv::Mat img = Mat(28, 28, 0);
+	cv::Mat loIMG = IMG;
+	if (!IMG.empty())
+	{
+
+		cv::threshold(loIMG, loIMG, 140, 255, cv::ThresholdTypes::THRESH_BINARY_INV);
+
+		cv::Rect a = cv::Rect(loIMG.cols/3, loIMG.rows/4, loIMG.cols*2/3, loIMG.rows*3/4);
+		loIMG = loIMG(a);
+
+		Size dsize = Size(28, 28);
+
+		resize(loIMG, img, dsize);
+
+		imshow("pic2", img);
+	}
+
+	//CHECK(!img.empty()) << "Unable to decode image " << file;
+
+	std::vector<Prediction> predictions = Classify(img);
+
+	/* Print the top N predictions. */
+//	for (size_t i = 0; i < predictions.size(); ++i)
+//	{
+//		Prediction p = predictions[i];
+//		std::cout << std::fixed << std::setprecision(4) << p.second << " - \""
+//				<< p.first << "\"" << std::endl;
+//	}
+	return predictions[0].first;
+}
+
+int testcaffe()
+{
+	string caffe_root = "/home/kohill/mnist/";
+	string model_file = caffe_root + "lenet.prototxt";
+	string trained_file = caffe_root + "lenet_iter_20000.caffemodel";
+	string mean_file = caffe_root + "mean.binaryproto";
+	string label_file = caffe_root + "mnistlabel.txt";
+	Classifier classifier(model_file, trained_file, mean_file, label_file);
+
+	static int count;
+	count++;
+	count=count<1?1:count;count=count>16?1:count;
+	string NumString = static_cast<ostringstream*>( &(ostringstream() << count) )->str();
+	string file = "/home/kohill/Desktop/caffe data/cl/1/i_img_write10544.png";
+
+	cv::Mat IMG = cv::imread(file, 0);
+	cv::Mat img = Mat(28,28,0);
+	//imshow("pic1", IMG);
+
+	cv::Rect a = cv::Rect(25, 7, 14, 12);
+
+
+	if(!IMG.empty())
+	{
+		IMG = IMG(a);
+		Size dsize = Size(28,28);
+		resize(IMG,img,dsize);
+		cv::threshold(img, img, 140, 255,cv::ThresholdTypes::THRESH_BINARY_INV);
+
+		imshow("pic2", img);
+	}
+	cv::waitKey(5);
 
 	  std::cout << "---------- Prediction for "
 	            << file << " ----------" << std::endl;
 
-	  cv::Mat img = cv::imread(file, -1);
+
 	  CHECK(!img.empty()) << "Unable to decode image " << file;
 	  std::vector<Prediction> predictions = classifier.Classify(img);
 
@@ -253,41 +320,7 @@ int test(){
 	    std::cout << std::fixed << std::setprecision(4) << p.second << " - \""
 	              << p.first << "\"" << std::endl;
 	  }
+
 }
-//int main(int argc, char** argv) {
-//  if (argc != 6) {
-//    std::cerr << "Usage: " << argv[0]
-//              << " deploy.prototxt network.caffemodel"
-//              << " mean.binaryproto labels.txt img.jpg" << std::endl;
-//    return 1;
-//  }
-//
-//  ::google::InitGoogleLogging(argv[0]);
-//
-//  string model_file   = argv[1];
-//  string trained_file = argv[2];
-//  string mean_file    = argv[3];
-//  string label_file   = argv[4];
-//  Classifier classifier(model_file, trained_file, mean_file, label_file);
-//
-//  string file = argv[5];
-//
-//  std::cout << "---------- Prediction for "
-//            << file << " ----------" << std::endl;
-//
-//  cv::Mat img = cv::imread(file, -1);
-//  CHECK(!img.empty()) << "Unable to decode image " << file;
-//  std::vector<Prediction> predictions = classifier.Classify(img);
-//
-//  /* Print the top N predictions. */
-//  for (size_t i = 0; i < predictions.size(); ++i) {
-//    Prediction p = predictions[i];
-//    std::cout << std::fixed << std::setprecision(4) << p.second << " - \""
-//              << p.first << "\"" << std::endl;
-//  }
-//}
-//#else
-//int main(int argc, char** argv) {
-//  LOG(FATAL) << "This example requires OpenCV; compile with USE_OPENCV.";
-//}
-//#endif  // USE_OPENCV
+
+

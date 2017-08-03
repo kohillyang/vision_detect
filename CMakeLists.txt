@@ -47,6 +47,7 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
     ${Caffe_INCLUDE_DIRS}
     ${Python_INCLUDE_DIRS}
+    /home/kohill/tx1/backup/caffe-master/include
     )
 
 include_directories(
@@ -67,7 +68,6 @@ add_executable(armor_detect
     src/detect_factory/video_recoder.cpp
     src/detect_factory/circle_detect.cpp
     src/detect_factory/rectang_det_HQG.cpp
-
     )
 add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	target_link_libraries(armor_detect 

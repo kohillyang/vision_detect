@@ -16,6 +16,7 @@
 #include <memory>
 #include <cmath>
 #include <algorithm>
+//#include "digital_classification.hpp"
 
 #define _DEBUG_HQG
 
@@ -447,7 +448,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 				if (abs(light1.center.x - light2.center.x) < 3.5 * h_
 						&& abs(light1.center.x - light2.center.x) > 0.8 * h_
 						&& abs(light1.center.y - light2.center.y)
-								< 0.7 * (1 + ang_ / 40) * h_) //delta x ,y
+								< 0.7 * (1 + fabs(ang_) / 40) * h_) //delta x ,y
 				{
 
 					cv::RotatedRect rect;
@@ -514,15 +515,17 @@ rectangdetect_info* rectang_detecter::select_final_rectang(
 	}
 }
 
-std::vector<rectangdetect_info> rectang_detecter::detect_enemy(
-		const cv::Mat &image, bool detect_blue)
+std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &image, bool detect_blue)
 {
+	//static Classifier classifier();
 	m_image = image.clone();
 	m_image_hql = image.clone();
 	m_show = image.clone();
 	final_rectang = image.clone();
 	possible_rectang = image.clone();
 	light_img = image.clone();
+
+
 
 	cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY); //gray
 	//imshowd("m_gray", m_gray);
@@ -586,6 +589,9 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
 		draw_rotated_rect(final_rectang, it.rect, cv::Scalar(250, 100, 0), 2);
 	}
 	draw_rotated_rect(final_rectang, finalrect->rect, cv::Scalar(0, 255, 47),2);
+
+
+
 	imshow("final_rectang", final_rectang);
 
 	return false;
