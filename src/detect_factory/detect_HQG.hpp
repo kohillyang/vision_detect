@@ -53,6 +53,9 @@ public:
 
 class rectang_detecter: public detect_factory
 {
+public:
+	cv::Mat m_binary_light;
+
 private:
 	cv::Mat m_common;
 	cv::Mat m_image;
@@ -64,7 +67,6 @@ private:
 	cv::Mat light_img;
 	cv::Mat m_binary_brightness;
 	cv::Mat m_binary_color;
-	cv::Mat m_binary_light;
 
 	const static float m_threshold_max_angle;
 	const static float m_threshold_min_area;

@@ -29,7 +29,7 @@ public:
     /**
      * @brief running the program of armor detect
      */
-    void running(void);
+    void detect(const cv::Mat &img);
     /**
      * @brief If the program can detect an armor
      * @return ture if detected an armor
