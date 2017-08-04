@@ -244,54 +244,53 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 
 	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
 
-//	std::vector<cv::RotatedRect> rects_last;
-//	std::vector<float> delta_last;
-////	static int i_img_write = 0;
-//	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
-//	{
-//		auto rect = x->rect.boundingRect();
-//		if (rect.br().x < img.size().width && rect.br().y < img.size().height
-//				&& rect.tl().x > 0 && rect.tl().y > 0)
-//		{
-//			auto image_sub_sub = img(rect);
-//			if (pythonCircleDetector.detect(image_sub_sub))
-//			{
-//				rects_last.push_back(x->rect);
-//				delta_last.push_back(0);
-//			}
-//			else
-//			{
-//			}
-//		}
-//		else
-//		{
-//			cerr << "over flow.." << endl;
-//		}
-//	}
-//	for(int i = 0;i<rects_last.size();i++){
-//		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
-//			if(delta_last[j] >delta_last[j+1] ){
-//				std::swap(delta_last[j],delta_last[j+1]);
-//				std::swap(rects_last[j],rects_last[j+1]);
-//			}
-//		}
-//	}
-//	if(rects_last.size()> 0 ){
-//		rect_out = rects_last[0];
-//		return true;
-//	}else{
-//		float x_center =0.0;
-//		float y_center =0.0;
-//		std::sort(rectangs.begin(),rectangs.end(),
-//				[](const rectandetect_info &p1,const rectandetect_info &p2)
-//				{return p1.lost < p2.lost;});
-//		if(rectangs.size()>0){
-//			rect_out =rectangs[0].rect;
-//			return true;
-//		}
-//		return false;
-//	}
-	return false;
+	std::vector<cv::RotatedRect> rects_last;
+	std::vector<float> delta_last;
+//	static int i_img_write = 0;
+	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
+	{
+		auto rect = x->rect.boundingRect();
+		if (rect.br().x < img.size().width && rect.br().y < img.size().height
+				&& rect.tl().x > 0 && rect.tl().y > 0)
+		{
+			auto image_sub_sub = img(rect);
+			if (false)
+			{
+				rects_last.push_back(x->rect);
+				delta_last.push_back(0);
+			}
+			else
+			{
+			}
+		}
+		else
+		{
+			cerr << "over flow.." << endl;
+		}
+	}
+	for(int i = 0;i<rects_last.size();i++){
+		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
+			if(delta_last[j] >delta_last[j+1] ){
+				std::swap(delta_last[j],delta_last[j+1]);
+				std::swap(rects_last[j],rects_last[j+1]);
+			}
+		}
+	}
+	if(rects_last.size()> 0 ){
+		rect_out = rects_last[0];
+		return true;
+	}else{
+		float x_center =0.0;
+		float y_center =0.0;
+		std::sort(rectangs.begin(),rectangs.end(),
+				[](const rectangdetect_info &p1,const rectangdetect_info &p2)
+				{return p1.lost < p2.lost;});
+		if(rectangs.size()>0){
+			rect_out =rectangs[0].rect;
+			return true;
+		}
+		return false;
+	}
 }
 
 
