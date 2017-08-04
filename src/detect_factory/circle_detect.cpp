@@ -34,7 +34,7 @@ using namespace cv;
 using namespace std;
 class PyCircleDetect{
 private:
-//    PyObject *p_detect;
+    PyObject *p_detect;
 public:
     static std::string getResAbsolutePath(){
     	char currentFileName[]=__FILE__;
@@ -141,11 +141,11 @@ float rectlongLean(const cv::RotatedRect &rect,float &w,float &h){
 }
 
 #include "kohill.h"
-static void drawRect(cv::Mat &img,const cv::RotatedRect rect){
+static void drawRect(cv::Mat &img,const cv::RotatedRect rect,cv::Scalar color = cv::Scalar(0,255,0)){
 	for (int i=0; i<4; i++){
 		cv::Point2f vertex[4];
 		rect.points(vertex);
-		cv::line(img, vertex[i], vertex[(i+1)%4],cv::Scalar(0,255,0),6 );
+		cv::line(img, vertex[i], vertex[(i+1)%4],color,6 );
 	}
 	return ;
 }
@@ -248,6 +248,50 @@ bool detectRectangle(const cv::Mat &img,std::vector<cv::RotatedRect> &rects){
     return false;
 }
 
+//@param img:light red & light red
+void deltaAndMean(const std::vector<float> &ve,float &mean,float &delta){
+	float su = 0,delta_sum = 0,sum2 = 0;
+	for(int i=0;i<ve.size();i++){
+		sum2 += ve[i];
+		su += i * ve[i];
+	}
+	mean = su/sum2;
+	for(int i=0;i<ve.size();i++){
+		float d = ve[i]*(i - mean)/sum2;
+		delta_sum +=  d *d;
+	}
+	delta = std::sqrt(delta_sum);
+}
+bool kohill_car_detect(const cv::Mat &img,cv::RotatedRect &rect){
+	int  width = img.cols;
+	int height = img.rows;
+	auto imgfunc = [&img,&width](int i, int j) { return *(img.ptr<uchar>(i) + j); };
+	float mean_x,mean_y,delta_x,delta_y;
+	std::vector<float> col_sum,row_sum;
+	for(int j = 0;j<width;j++ ){
+		float s = 0;
+		for(int i = 0;i<height;i++){
+			s += imgfunc(i,j);
+		}
+		col_sum.push_back(s/height);
+	}
+	for(int i = 0;i<height;i++ ){
+		float s = 0;
+		for(int j = 0;j<width;j++){
+			s += imgfunc(i,j);
+		}
+		row_sum.push_back(s/width);
+	}
+
+	deltaAndMean(col_sum,mean_x,delta_x);
+	deltaAndMean(row_sum,mean_y,delta_y);
+	kohill::print("\nmean Value\t\t\t\t\t\t",delta_x," ",delta_y);
+	rect  = cv::RotatedRect(
+			cv::Point2f(mean_x,mean_y),
+			cv::Size2f(64,32),0);
+	return false;
+}
+
 rectang_detecter recDetector(false);
 bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	auto img_show = img.clone();
@@ -256,54 +300,61 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	std::vector<float> radiuse;
 
 	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
+	auto img_lights = recDetector.m_binary_light;
+	cv::RotatedRect car_rect;
+	autocar::vision_mul::kohill_car_detect(img_lights,car_rect);
+	auto img_car = img.clone();
+	drawRect(img_car,car_rect,cv::Scalar(255,255,255));
+	kohill::kimshow("my img_car",img_car);
 
-//	std::vector<cv::RotatedRect> rects_last;
-//	std::vector<float> delta_last;
-////	static int i_img_write = 0;
-//	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
-//	{
-//		auto rect = x->rect.boundingRect();
-//		if (rect.br().x < img.size().width && rect.br().y < img.size().height
-//				&& rect.tl().x > 0 && rect.tl().y > 0)
-//		{
-//			auto image_sub_sub = img(rect);
-//			if (pythonCircleDetector.detect(image_sub_sub))
-//			{
-//				rects_last.push_back(x->rect);
-//				delta_last.push_back(0);
-//			}
-//			else
-//			{
-//			}
-//		}
-//		else
-//		{
-//			cerr << "over flow.." << endl;
-//		}
-//	}
-//	for(int i = 0;i<rects_last.size();i++){
-//		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
-//			if(delta_last[j] >delta_last[j+1] ){
-//				std::swap(delta_last[j],delta_last[j+1]);
-//				std::swap(rects_last[j],rects_last[j+1]);
-//			}
-//		}
-//	}
-//	if(rects_last.size()> 0 ){
-//		rect_out = rects_last[0];
-//		return true;
-//	}else{
-//		float x_center =0.0;
-//		float y_center =0.0;
-//		std::sort(rectangs.begin(),rectangs.end(),
-//				[](const rectandetect_info &p1,const rectandetect_info &p2)
-//				{return p1.lost < p2.lost;});
-//		if(rectangs.size()>0){
-//			rect_out =rectangs[0].rect;
-//			return true;
-//		}
-//		return false;
-//	}
+	std::vector<cv::RotatedRect> rects_last;
+	std::vector<float> delta_last;
+	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
+	{
+		auto rect = x->rect.boundingRect();
+		if (rect.br().x < img.size().width && rect.br().y < img.size().height
+				&& rect.tl().x > 0 && rect.tl().y > 0)
+		{
+			auto image_sub_sub = img(rect);
+			if (pythonCircleDetector.detect(image_sub_sub))
+			{
+				rects_last.push_back(x->rect);
+				delta_last.push_back(0);
+			}
+			else
+			{
+			}
+		}
+		else
+		{
+			cerr << "over flow.." << endl;
+		}
+	}
+	for(int i = 0;i<rects_last.size();i++){
+		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
+			if(delta_last[j] >delta_last[j+1] ){
+				std::swap(delta_last[j],delta_last[j+1]);
+				std::swap(rects_last[j],rects_last[j+1]);
+			}
+		}
+	}
+	if(rects_last.size()> 0 ){
+		rect_out = rects_last[0];
+		return true;
+	}else{
+		float x_center =0.0;
+		float y_center =0.0;
+		using autocar::vision_mul::rectangdetect_info;
+		std::sort(rectangs.begin(),rectangs.end(),
+				[](const autocar::vision_mul::rectangdetect_info &p1,
+						const autocar::vision_mul::rectangdetect_info &p2)
+				{return p1.lost < p2.lost;});
+		if(rectangs.size()>0){
+			rect_out =rectangs[0].rect;
+			return true;
+		}
+		return false;
+	}
 	return false;
 }
 
