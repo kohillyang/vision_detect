@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(vision_unit)
+project(vision_detect)
 set(CMAKE_BUILD_TYPE,Debug)
 add_definitions(-std=c++11)
 set(BOOST_ROOT "/opt/boost")
@@ -49,7 +49,10 @@ include_directories(
     ${OpenCV_INCLUDE_DIRS}
     ${Caffe_INCLUDE_DIRS}
     ${Python_INCLUDE_DIRS}
+    ${Glog_INCLUDE_DIRS}
+    
     /home/kohill/tx1/backup/caffe-master/include
+    /usr/local/cuda-8.0/targets/x86_64-linux/include
     )
 
 include_directories(
@@ -70,6 +73,7 @@ add_executable(armor_detect
     src/detect_factory/video_recoder.cpp
     src/detect_factory/circle_detect.cpp
     src/detect_factory/rectang_det_HQG.cpp
+    src/detect_factory/digital_classification.cpp
     )
 add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	target_link_libraries(armor_detect 

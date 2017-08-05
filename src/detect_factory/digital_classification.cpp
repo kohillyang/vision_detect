@@ -241,21 +241,39 @@ void Classifier::Preprocess(const cv::Mat& img,
     << "Input channels are not wrapping the input layer of the network.";
 }
 
+float getaveragegray(const cv::Mat& image)
+{
+	int nr = image.rows; // number of rows  hang
+	int nc = image.cols * image.channels(); // total number of elements per line  lie
+	float totalgray = 0;
+	const uchar* data;
+	for (int j = 0; j < nr; j++)
+	{
+		data = image.ptr < uchar > (j);
+		for (int i = 0; i < nc; i++)
+		{
+			totalgray += (*data++);
+		}
+	}
+	totalgray = totalgray/(nr*nc);
+	totalgray = totalgray+(0-totalgray)*0.2;
+	return totalgray;
+}
 string Classifier::classify_mnist(const cv::Mat& IMG)
 {
 	cv::Mat img = Mat(28, 28, 0);
-	cv::Mat loIMG = IMG;
+	cv::Mat loIMG = IMG.clone();
 	if (!IMG.empty())
 	{
-
-		cv::threshold(loIMG, loIMG, 140, 255, cv::ThresholdTypes::THRESH_BINARY_INV);
-
-		cv::Rect a = cv::Rect(loIMG.cols/3, loIMG.rows/4, loIMG.cols*2/3, loIMG.rows*3/4);
-		loIMG = loIMG(a);
-
+		cv::cvtColor(loIMG, loIMG, cv::ColorConversionCodes::COLOR_BGR2GRAY);
+//		cv::Rect a = cv::Rect(loIMG.cols/3, loIMG.rows/4, loIMG.cols*2/3, loIMG.rows*3/4);
+//		loIMG = loIMG(a);
 		Size dsize = Size(28, 28);
 
 		resize(loIMG, img, dsize);
+
+		cv::threshold(img, img, getaveragegray(img), 255, cv::ThresholdTypes::THRESH_BINARY_INV);
+
 
 		imshow("pic2", img);
 	}
