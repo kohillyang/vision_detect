@@ -29,7 +29,7 @@
 #include <serial_comm/car_speed.h>
 #include "armor_detect.h"
 
-#define USB_USB_CAM 0
+#define USB_USB_CAM 1
 #if USB_USB_CAM
 namespace autocar
 {
@@ -92,15 +92,16 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "armor_detect");
 	autocar::vision_mul::armor_detect_node armor_solver;
     cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/13.avi");
-//	    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 800);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+//	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/13.avi");
+	    cv::VideoCapture capture_camera_forward(0);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
 	for(;;){
 	    capture_camera_forward >> image;
+	    cv::imshow("im",image);
+	    cv::waitKey(1);
 	    armor_solver.detect(image);
-		std::cout<<"Cannot open the camera!"<<std::endl;
 	}
 	ros::spin();
 	return 0;

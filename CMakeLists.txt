@@ -19,6 +19,8 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 find_package(Threads REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 add_message_files(
     FILES
@@ -72,6 +74,9 @@ add_executable(armor_detect
 add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	target_link_libraries(armor_detect 
 	${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES} 
-	/usr/lib/x86_64-linux-gnu/libpython2.7.so
+	${Python_LIBRARIES} 
+	${image_transport_LIBRARIES}
+	${cv_bridge_LIBRARIES}
+	
 )
 
