@@ -65,10 +65,10 @@ void armor_detect_node::running(void)
 {
 	this->debug_on = true;
     cv::Mat image;
-//	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
-    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
+//    cv::VideoCapture capture_camera_forward(0);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+//    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
     if(!capture_camera_forward.isOpened())
     {
@@ -139,7 +139,7 @@ void armor_detect_node::running(void)
             }
         	pub_armor_pos.publish(armor_pos);
         }
-        cv::waitKey(5);
+        cv::waitKey(1);
     }
 }
 

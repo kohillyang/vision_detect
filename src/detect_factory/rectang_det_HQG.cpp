@@ -19,7 +19,9 @@
 #include <algorithm>
 #include "digital_classification.hpp"
 
-#define _DEBUG_HQG
+//#define _DEBUG_HQG
+
+//#define _DEBUG_HQG_final
 
 Classifier myclassifier;
 
@@ -192,22 +194,23 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	cv::dilate(m_binary_color, m_binary_color, element, cv::Point(-1, -1), 1);
 	m_binary_light = m_binary_color & m_binary_brightness; // 两二值图交集
 
-#ifdef _DEBUG_VISION
+#ifdef _DEBUG_HQG // _DEBUG_VISION
 	auto contours_light = find_contours(m_binary_light.clone()); // 两二值图交集后白色的轮廓
 #else
 			auto contours_light = find_contours(m_binary_light); // 两二值图交集后白色的轮廓
 #endif
-#ifdef _DEBUG_VISION
+#ifdef _DEBUG_HQG //_DEBUG_VISION
 	auto contours_brightness = find_contours(m_binary_brightness.clone()); // 灰度图灯轮廓
 #else
 			auto contours_brightness = find_contours(m_binary_brightness); // 灰度图灯轮廓
 #endif
 
+#ifdef _DEBUG_HQG
 	cv::Mat result = m_image_hql.clone();
 	cv::Mat result0 = m_image_hql.clone();
 	//drawContours(m_binary_brightness, contours_brightness, -1, cv::Scalar(127), 1);
 	drawContours(m_binary_light, contours_light, -1, cv::Scalar(127), 1);
-#ifdef _DEBUG_HQG
+
 	imshowd("m_binary_light", m_binary_color);
 	imshowd("m_binary_brightness", m_binary_brightness);
 	imshowd("m_binary_color", m_binary_light);
@@ -536,33 +539,37 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 {
 
 	m_image = image.clone();
+
+
+
+#ifdef _DEBUG_HQG
+
+	light_img = image.clone();
 	m_image_hql = image.clone();
 	m_show = image.clone();
 	final_rectang = image.clone();
-	possible_rectang = image.clone();
-	light_img = image.clone();
-
+#endif
 
 
 	cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY); //gray
 	//imshowd("m_gray", m_gray);
 	auto lights = detect_lights(detect_blue);
 
-	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 0), 2, true,
-			cv::Scalar(255, 0, 0));
+//	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 0), 2, true,
+//			cv::Scalar(255, 0, 0));
 
-	lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area,
-			m_threshold_max_area);
+	lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area, m_threshold_max_area);
 
-	draw_rotated_rects(light_img, lights, cv::Scalar(0, 0, 255), 2, false,
-			cv::Scalar(255, 0, 0));
-#ifdef _DEBUG_HQG
-	imshow("light_img", light_img);
-#endif
 	auto Rectangs = detect_select_rect(lights);
 
 	finalrect = select_final_rectang(Rectangs);
 
+#ifdef _DEBUG_HQG
+	draw_rotated_rects(light_img, lights, cv::Scalar(0, 0, 255), 2, false, cv::Scalar(255, 0, 0));
+	imshow("light_img", light_img);
+#endif
+
+#ifdef	_DEBUG_HQG_final
 	if(Rectangs.size()!=0)
 	{
 		int s = (finalrect->rect.size.height + finalrect->rect.size.width) / 7 + 1;
@@ -572,7 +579,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 		cv::Mat arm = final_rectang(a);
 		//imshow("arm", arm);
 		string str = myclassifier.classify_mnist(arm);
-		std::cout<<"                                               the number is: "+str<<std::endl;
+		std::cout<<"                                                 the number is: "+str<<std::endl;
 		cv::putText(final_rectang, str, finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
 	}
 	for (auto it : Rectangs)
@@ -583,7 +590,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	draw_rotated_rect(final_rectang, rectangdetect_info::car_rect, cv::Scalar(194, 158, 241), 2);
 	imshow("final_rectang", final_rectang);
 
-
+#endif
 
 
 	return Rectangs;
@@ -595,7 +602,6 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
 	m_image_hql = image.clone();
 	m_show = image.clone();
 	final_rectang = image.clone();
-	possible_rectang = image.clone();
 	light_img = image.clone();
 
 	cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY); //gray
