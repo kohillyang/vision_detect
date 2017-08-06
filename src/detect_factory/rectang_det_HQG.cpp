@@ -20,8 +20,8 @@
 //#include "digital_classification.hpp"
 
 //#define _DEBUG_HQG
-
-//#define _DEBUG_HQG_final
+using namespace std;
+#define _DEBUG_HQG_final
 
 //Classifier myclassifier;
 
@@ -41,9 +41,9 @@ const float rectang_detecter::threshold_line_binary_color = 4500.f;
 
 
 
-rectangdetect_info::detectstate rectangdetect_info::state =
-		rectangdetect_info::noneenermy;
+rectangdetect_info::detectstate rectangdetect_info::state = rectangdetect_info::noneenermy;
 cv::RotatedRect rectangdetect_info::car_rect = cv::RotatedRect();
+float rectangdetect_info::rectdistance = 0.0;
 
 rectangdetect_info::rectangdetect_info()
 {
@@ -466,7 +466,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 								< 0.7 * (1 + fabs(ang_) / 40) * h_) //delta x ,y
 						||(h_< 12
 						&&fabs(light1.center.x - light2.center.x) < 6.0 * h_
-						&& fabs(light1.center.x - light2.center.x) > 0.8 * h_
+						&& fabs(light1.center.x - light2.center.x) > 1.2 * h_
 						&& fabs(light1.center.y - light2.center.y)< 1.0 * (1 + fabs(ang_) / 40) * h_
 						))
 				{
@@ -492,11 +492,10 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 
 					}
 
-					float lost1 = abs(ang1 - ang2) * h_ / 30 + abs(h1 - h2);
-					float lost2 = abs(
-							abs(light1.center.x - light2.center.x) - 2.4 * h_)
-							+ abs(light1.center.y - light2.center.y);
-					float totallost = lost1 + lost2;
+					float lost1 = fabs(ang1 - ang2) / 30 + fabs(h1 - h2)/h_ + fabs(ang_)/30;
+					float lost2 = fabs(fabs(light1.center.x - light2.center.x)/h_ - 2.4)
+							+ fabs(light1.center.y - light2.center.y)/h_;
+					float totallost = lost1 + lost2 - 0.1 * h_;
 //					if (totallost < rectang.lost)
 //					{
 //						rectang = rectangdetect_info(rect, vecpoint, light1,light2, totallost);
@@ -534,19 +533,33 @@ rectangdetect_info* rectang_detecter::select_final_rectang(
 		return old_finalrect;
 	}
 }
+void rectang_detecter::calculate_distance(std::vector<rectangdetect_info> & rect_infos)
+{
+	float distance0,distance1,distance2;
+	int size = (int)(rect_infos.size());
+	if(size!=0)
+	{
+		distance0 = 2000/(rect_infos[0].left_light.size.height+rect_infos[0].right_light.size.height);
+		distance1 = 3*2000/fabs(rect_infos[0].left_light.center.x - rect_infos[0].right_light.center.x);
 
+		rectangdetect_info::rectdistance = rectangdetect_info::rectdistance * 0.96 + (distance0+distance1)/2 * 0.04;
+	}
+	else
+	{}
+
+}
 std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &image, bool detect_blue)
 {
 
 	m_image = image.clone();
-
-
 
 #ifdef _DEBUG_HQG
 
 	light_img = image.clone();
 	m_image_hql = image.clone();
 	m_show = image.clone();
+#endif
+#ifdef	_DEBUG_HQG_final
 	final_rectang = image.clone();
 #endif
 
@@ -564,6 +577,8 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 
 	finalrect = select_final_rectang(Rectangs);
 
+	calculate_distance(Rectangs);
+
 #ifdef _DEBUG_HQG
 	draw_rotated_rects(light_img, lights, cv::Scalar(0, 0, 255), 2, false, cv::Scalar(255, 0, 0));
 	imshow("light_img", light_img);
@@ -572,22 +587,25 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 #ifdef	_DEBUG_HQG_final
 	if(Rectangs.size()!=0)
 	{
-		int s = (finalrect->rect.size.height + finalrect->rect.size.width) / 7 + 1;
-		int centerx = finalrect->rect.center.x;
-		int centery = finalrect->rect.center.y;
-		cv::Rect a = cv::Rect(centerx - s / 2, centery - s / 2, s, s);
-		cv::Mat arm = final_rectang(a);
-		//imshow("arm", arm);
-		string str = myclassifier.classify_mnist(arm);
-		std::cout<<"                                                 the number is: "+str<<std::endl;
-		cv::putText(final_rectang, str, finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
-	}
+//		int s = (finalrect->rect.size.height + finalrect->rect.size.width) / 7 + 1;
+//		int centerx = finalrect->rect.center.x;
+//		int centery = finalrect->rect.center.y;
+//		cv::Rect a = cv::Rect(centerx - s / 2, centery - s / 2, s, s);
+//		cv::Mat arm = final_rectang(a);
+//		imshow("arm", arm);
+//		string str = myclassifier.classify_mnist(arm);
+//		std::cout<<"                                                 the number is: "+str<<std::endl;
+//		cv::putText(final_rectang, str, finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
+
 	for (auto it : Rectangs)
 	{
 		draw_rotated_rect(final_rectang, it.rect, cv::Scalar(250, 100, 0), 2);
 	}
 	draw_rotated_rect(final_rectang, finalrect->rect, cv::Scalar(0, 255, 47), 2);
 	draw_rotated_rect(final_rectang, rectangdetect_info::car_rect, cv::Scalar(194, 158, 241), 2);
+	string str = static_cast<ostringstream*>( &(ostringstream() << rectangdetect_info::rectdistance) )->str();
+	cv::putText(final_rectang, str , finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
+	}
 	imshow("final_rectang", final_rectang);
 
 #endif

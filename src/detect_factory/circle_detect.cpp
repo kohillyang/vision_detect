@@ -304,7 +304,7 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	std::vector<cv::Point2f> centers;
 	std::vector<float> radiuse;
 
-	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
+	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,true);
 	auto img_lights = recDetector.m_binary_light;
 	cv::RotatedRect car_rect;
 	autocar::vision_mul::kohill_car_detect(img_lights,car_rect);
