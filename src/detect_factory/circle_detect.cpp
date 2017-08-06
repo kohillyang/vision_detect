@@ -4,6 +4,7 @@
  *  Created on: Jul 25, 2017
  *      Author: kohill
  */
+#define CPU_ONLY 1
 #include "armor_detect_node.h"
 #include "debug_utility.hpp"
 #include "util.h"
@@ -17,6 +18,7 @@
 #include "kohill.h"
 #include <stdio.h>
 #include <iostream>
+#include "digital_classification.hpp"
 using namespace std;
 using namespace cv;
 #include <opencv2/core/core.hpp>
@@ -34,7 +36,7 @@ using namespace cv;
 using namespace std;
 class PyCircleDetect{
 private:
-    PyObject *p_detect;
+    PyObject *func_tryFindMinAreaRect;
 public:
     static std::string getResAbsolutePath(){
     	char currentFileName[]=__FILE__;
@@ -55,46 +57,48 @@ public:
         PyRun_SimpleString("import sys,os");
         PyRun_SimpleString((string("sys.path.append('")+getResAbsolutePath()+"')").data());
         PyRun_SimpleString("import trainAndTest");
-        PyObject* moduleName = PyString_FromString("trainAndTest");
+        PyObject* moduleName = PyString_FromString("AreaRect");
         PyObject* pModule = PyImport_Import(moduleName);
         if (!pModule) // 加载模块失败
         {
             cerr << "[ERROR] Python get module failed." << endl;
             exit(-1);
         }
-        PyObject* pv_init = PyObject_GetAttrString(pModule, "init");
-        if (!pv_init || !PyCallable_Check(pv_init))
+        func_tryFindMinAreaRect = PyObject_GetAttrString(pModule, "tryFindMinAreaRect");
+        if (!func_tryFindMinAreaRect || !PyCallable_Check(func_tryFindMinAreaRect))
         {
-            cout << "[ERROR] Can't find function (init)" << endl;
+            cerr << "[ERROR] Can't find function (tryFindMinAreaRect)" << endl;
+            exit(-1);
         }
-        PyObject* pInitArg = PyTuple_New(0);
-        PyObject_CallObject(pv_init,NULL);
-        p_detect = PyObject_GetAttrString(pModule, "detect");
-        if (!p_detect || !PyCallable_Check(p_detect))
-        {
-            cout << "[ERROR] Can't find function (detect)" << endl;
-        }
-        cout << "Python Module load Finished." << endl;
+        cout << "[info] Python Module load Finished." << endl;
 
     }
-    int detect(cv::Mat &img){
-//        cv::Mat m_gray;
-//        cv::cvtColor(img, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
-//        cv::resize(m_gray, m_gray, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
-//        PyObject* args = PyTuple_New(1);
-//        PyObject *pListArg1 = PyList_New(0);
-//        for(int i = 0;i< 64 * 32;i++){
-//            PyObject *p = Py_BuildValue("b",m_gray.data[i]);
-//            PyList_Append(pListArg1,p);
-//        }
-//        PyTuple_SetItem(args,0,pListArg1);
-//        PyObject *r_object = PyObject_CallObject(p_detect, args);
-//        int r_py;
-//        if(r_object){
-//        	PyArg_Parse(r_object,"i",&r_py);
-//        }
-//        return r_py;
-    	return 0;
+    bool tryFindMinAreaRect(const cv::Mat &img,cv::Mat &img_outPut){
+
+
+
+
+        cv::Mat m_gray;
+        cv::cvtColor(img, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
+        cv::imwrite("/tmp/armor_detect_tmp.png",img);
+        cv::resize(m_gray, m_gray, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
+        int img_size = m_gray.cols * m_gray.channels() *m_gray.rows;
+        PyObject* args = PyTuple_New(1);
+        PyObject *pListArg1 = PyList_New(0);
+        for (int i = 0;i<img_size;i++){
+        	PyObject *p = Py_BuildValue("b",m_gray.data[i]);
+        	PyList_Append(pListArg1,p);
+        }
+        PyTuple_SetItem(args,0,pListArg1);
+        PyObject *r_object = PyObject_CallObject(func_tryFindMinAreaRect, args);
+        int detected=0,x,y,w,h;
+        PyArg_ParseTuple(r_object,"i|i|i|i|i",&detected,&x,&y,&w,&h);
+        if(detected == 1){
+        	img_outPut = img(cv::Rect(x,y,w,h));
+        	return true;
+        }else{
+           	return false;
+        }
     }
     ~PyCircleDetect(){
 //        Py_Finalize();
@@ -293,6 +297,7 @@ bool kohill_car_detect(const cv::Mat &img,cv::RotatedRect &rect){
 }
 
 rectang_detecter recDetector(false);
+//Classifier calssifier;
 bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	auto img_show = img.clone();
 
@@ -305,7 +310,6 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	autocar::vision_mul::kohill_car_detect(img_lights,car_rect);
 	auto img_car = img.clone();
 	drawRect(img_car,car_rect,cv::Scalar(255,255,255));
-	kohill::kimshow("my img_car",img_car);
 
 	std::vector<cv::RotatedRect> rects_last;
 	std::vector<float> delta_last;
@@ -316,10 +320,15 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 				&& rect.tl().x > 0 && rect.tl().y > 0)
 		{
 			auto image_sub_sub = img(rect);
-			if (pythonCircleDetector.detect(image_sub_sub))
+			cv::Mat img_out;
+
+			if (pythonCircleDetector.tryFindMinAreaRect(image_sub_sub,img_out))
 			{
 				rects_last.push_back(x->rect);
 				delta_last.push_back(0);
+				cv::imshow("img_circle",img_out);
+//				string str= calssifier.classify_mnist(img_out);
+//				cout << "[info]: detect result"<<str << std::endl ;
 			}
 			else
 			{
@@ -330,6 +339,8 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 			cerr << "over flow.." << endl;
 		}
 	}
+	kohill::kimshow("my img_car",img_car);
+
 	for(int i = 0;i<rects_last.size();i++){
 		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
 			if(delta_last[j] >delta_last[j+1] ){

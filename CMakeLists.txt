@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     move_base_msgs
     geometry_msgs
     message_generation    
+    
     )
 
 ## System dependencies are found with CMake's conventions
@@ -21,7 +22,8 @@ find_package(OpenCV REQUIRED)
 find_package(PythonLibs 2.7 REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(cv_bridge REQUIRED)
-
+find_package(glog REQUIRED)
+set(CPU_ONLY 1)
 add_message_files(
     FILES
     armor_msg.msg
@@ -53,13 +55,14 @@ include_directories(
     
     /home/kohill/tx1/backup/caffe-master/include
     /usr/local/cuda-8.0/targets/x86_64-linux/include
+    /usr/include/python2.7/
     )
 
 include_directories(
     include/vision_unit
     include/vision_unit/detect_factory
     include/vision_unit/vision_lidar_fusion/
-    /usr/include/python2.7
+
     )
 
 add_executable(armor_detect
@@ -73,7 +76,7 @@ add_executable(armor_detect
     src/detect_factory/video_recoder.cpp
     src/detect_factory/circle_detect.cpp
     src/detect_factory/rectang_det_HQG.cpp
-    src/detect_factory/digital_classification.cpp
+#    src/detect_factory/digital_classification.cpp
     )
 add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	target_link_libraries(armor_detect 
@@ -81,6 +84,10 @@ add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
 	${Python_LIBRARIES} 
 	${image_transport_LIBRARIES}
 	${cv_bridge_LIBRARIES}
+	${glog_LIBRARIES}
+	${caffe_LIBRARIES}
+
+	/usr/local/lib/libglog.a	
 	
 )
 

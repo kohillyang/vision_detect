@@ -17,13 +17,13 @@
 #include <memory>
 #include <cmath>
 #include <algorithm>
-#include "digital_classification.hpp"
+//#include "digital_classification.hpp"
 
 //#define _DEBUG_HQG
 
 //#define _DEBUG_HQG_final
 
-Classifier myclassifier;
+//Classifier myclassifier;
 
 namespace autocar
 {

@@ -64,84 +64,50 @@ static void drawRect(cv::Mat &img,const cv::RotatedRect rect){
 static std::chrono::time_point<std::chrono::system_clock> time_his = std::chrono::system_clock::now();
 void armor_detect_node::detect(const cv::Mat &image)
 {
-	this->debug_on = true;
-    cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/14.avi");
-//    cv::VideoCapture capture_camera_forward(0);
-//    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-//    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+	std::chrono::duration<double> diff = std::chrono::system_clock::now()-time_his;
+	std::cout << "[info]:framerate:"<<10/diff.count() << std::endl;
+	time_his =std::chrono::system_clock::now();
+	cv::waitKey(1);
+	if(image.empty())
+	{
+		std::cout<<"Image has no data!"<<std::endl;
+		exit(-1);
+	}else{
+		cv::imshow("detect result",image);
+		cv::RotatedRect rect;
+		if(kohill_armor_detect(image,rect)){
+			float dis = 0.1*std::sqrt(1/rect.size.area());
+			armor_pos.detected = true;
+			armor_pos.x = rect.center.x - 400;
+			armor_pos.y = rect.center.y - 300;
+			armor_pos.d = dis*1000;
+			pub_armor_pos.publish(armor_pos);
 
-    if(!capture_camera_forward.isOpened())
-    {
-        std::cout<<"Cannot open the camera!"<<std::endl;
-        return;
-    }
-    set_camera_exposure("/dev/video0", 50);
-    //{
-    //  while (true) {
-    //    boost::this_thread::sleep_for(boost::chrono::seconds(10));
-    //  }
-    //}
+			goal_pose.target_pose.pose.position.z = 0;
 
-    std::shared_ptr<armor_detecter> armor_detector;
-    std::shared_ptr<labeler> label;
-    std::shared_ptr<video_recoder> recoder;
-
-    int nframes = 0;
-    bool detected = false;
-    //filter
-    int detected_count = 0;
-    int undetected_count = 3;
-
-    for (;;)
-    {
-    	auto speed_test_start_begin_time = std::chrono::system_clock::now();
-        capture_camera_forward >> image;
-
-        cv::Point2f circle_center;
-        float cirlce_r;
-        if(image.empty())
-        {
-            std::cout<<"Image has no data!"<<std::endl;
-            continue;
-        }else{
-            cv::imshow("detect result",image);
-        	cv::RotatedRect rect;
-            if(kohill_armor_detect(image,rect)){
-            	float dis = 0.1*std::sqrt(1/rect.size.area());
-				armor_pos.detected = true;
-				armor_pos.x = rect.center.x - 320;
-				armor_pos.y = rect.center.y - 240;
-				armor_pos.d = dis*1000;
-                pub_armor_pos.publish(armor_pos);
-
-                goal_pose.target_pose.pose.position.z = 0;
-
-                goal_pose.target_pose.header.frame_id = "base_link";
-                goal_pose.target_pose.header.stamp = ros::Time::now();
-                goal_pose.target_pose.pose.position.x = 0;
-                goal_pose.target_pose.pose.position.y = 0;
-                goal_pose.target_pose.pose.position.z = dis;
-                //tf::Quaternion q;
-                //q.setRPY(0, 0, pan_yaw);
-                goal_pose.target_pose.pose.orientation.x= 0;
-                goal_pose.target_pose.pose.orientation.y= 0;
-                goal_pose.target_pose.pose.orientation.z= 0;
-                goal_pose.target_pose.pose.orientation.w= 1;
-                pub_goal.publish(goal_pose);
-                auto image_tmp = image.clone();
-                drawRect(image_tmp,rect);
-                cv::imshow("detect result",image_tmp);
-            }else{
-            	armor_pos.detected = false;
-            	pub_armor_pos.publish(armor_pos);
-            	goal_pose.target_pose.pose.position.z =0;
-                pub_goal.publish(goal_pose);
-            }
-        	pub_armor_pos.publish(armor_pos);
-        }
-        cv::waitKey(1);
-    }
+			goal_pose.target_pose.header.frame_id = "base_link";
+			goal_pose.target_pose.header.stamp = ros::Time::now();
+			goal_pose.target_pose.pose.position.x = 0;
+			goal_pose.target_pose.pose.position.y = 0;
+			goal_pose.target_pose.pose.position.z = dis;
+			//tf::Quaternion q;
+			//q.setRPY(0, 0, pan_yaw);
+			goal_pose.target_pose.pose.orientation.x= 0;
+			goal_pose.target_pose.pose.orientation.y= 0;
+			goal_pose.target_pose.pose.orientation.z= 0;
+			goal_pose.target_pose.pose.orientation.w= 1;
+			pub_goal.publish(goal_pose);
+			auto image_tmp = image.clone();
+			drawRect(image_tmp,rect);
+			cv::imshow("detect result",image_tmp);
+		}else{
+			armor_pos.detected = false;
+			pub_armor_pos.publish(armor_pos);
+			goal_pose.target_pose.pose.position.z =0;
+			pub_goal.publish(goal_pose);
+		}
+		pub_armor_pos.publish(armor_pos);
+	}
 }
 
 void armor_detect_node::pan_info_callback(const serial_comm::car_speed::ConstPtr &pan_data)
