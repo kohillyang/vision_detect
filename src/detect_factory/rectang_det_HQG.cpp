@@ -21,7 +21,7 @@
 
 //#define _DEBUG_HQG
 using namespace std;
-#define _DEBUG_HQG_final
+// #define _DEBUG_HQG_final
 
 //Classifier myclassifier;
 
@@ -560,9 +560,6 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	m_show = image.clone();
 #endif
 #ifdef	_DEBUG_HQG_final
-	final_rectang = image.clone();
-#endif
-#ifdef	_DEBUG_HQG_final
 	//final_rectang = image.clone();
 #endif
 
@@ -604,12 +601,15 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	{
 		draw_rotated_rect(m_image, it.rect, cv::Scalar(250, 100, 0), 2);
 	}
-	draw_rotated_rect(final_rectang, finalrect->rect, cv::Scalar(0, 255, 47), 2);
-	draw_rotated_rect(final_rectang, rectangdetect_info::car_rect, cv::Scalar(194, 158, 241), 2);
+	draw_rotated_rect(m_image, finalrect->rect, cv::Scalar(0, 255, 47), 2);
+	draw_rotated_rect(m_image, rectangdetect_info::car_rect, cv::Scalar(194, 158, 241), 2);
 	string str = static_cast<ostringstream*>( &(ostringstream() << rectangdetect_info::rectdistance) )->str();
-	cv::putText(final_rectang, str , finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
+	cv::putText(m_image, str , finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
 	}
-	imshow("final_rectang", final_rectang);
+	std ::cout <<m_image.cols << m_image.rows <<std::endl;
+	cv::Size dsize = cv::Size(256, 144);
+	cv::Mat mg_resize;
+	cv::resize(m_image, mg_resize, dsize);
 
 	imshow("final_rectang", mg_resize);
 
