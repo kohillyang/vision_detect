@@ -73,13 +73,13 @@ void armor_detect_node::detect(const cv::Mat &image)
 		std::cout<<"Image has no data!"<<std::endl;
 		exit(-1);
 	}else{
-		cv::imshow("detect result",image);
+		//cv::imshow("detect result",image);
 		cv::RotatedRect rect;
 		if(kohill_armor_detect(image,rect)){
-			float dis = 0.1*std::sqrt(1/rect.size.area());
+			float dis = 0.1/2*std::sqrt(1/rect.size.area());
 			armor_pos.detected = true;
-			armor_pos.x = rect.center.x - 400;
-			armor_pos.y = rect.center.y - 300;
+			armor_pos.x = rect.center.x - 320;
+			armor_pos.y = rect.center.y - 240;
 			armor_pos.d = dis*1000;
 			pub_armor_pos.publish(armor_pos);
 
@@ -97,9 +97,9 @@ void armor_detect_node::detect(const cv::Mat &image)
 			goal_pose.target_pose.pose.orientation.z= 0;
 			goal_pose.target_pose.pose.orientation.w= 1;
 			pub_goal.publish(goal_pose);
-			auto image_tmp = image.clone();
-			drawRect(image_tmp,rect);
-			cv::imshow("detect result",image_tmp);
+			// auto image_tmp = image.clone();
+			// drawRect(image_tmp,rect);
+			//cv::imshow("detect result",image_tmp);
 		}else{
 			armor_pos.detected = false;
 			pub_armor_pos.publish(armor_pos);

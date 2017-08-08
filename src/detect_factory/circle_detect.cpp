@@ -304,7 +304,7 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	std::vector<cv::Point2f> centers;
 	std::vector<float> radiuse;
 
-	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
+	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,true);
 	auto img_lights = recDetector.m_binary_light;
 	cv::RotatedRect car_rect;
 	autocar::vision_mul::kohill_car_detect(img_lights,car_rect);
@@ -326,7 +326,7 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 			{
 				rects_last.push_back(x->rect);
 				delta_last.push_back(0);
-				cv::imshow("img_circle",img_out);
+				//cv::imshow("img_circle",img_out);
 //				string str= calssifier.classify_mnist(img_out);
 //				cout << "[info]: detect result"<<str << std::endl ;
 			}
@@ -339,7 +339,7 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 			cerr << "over flow.." << endl;
 		}
 	}
-	kohill::kimshow("my img_car",img_car);
+	//kohill::kimshow("my img_car",img_car);
 
 	for(int i = 0;i<rects_last.size();i++){
 		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){

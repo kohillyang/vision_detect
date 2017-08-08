@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(vision_detect)
+project(vision_unit)
 set(CMAKE_BUILD_TYPE,Debug)
 add_definitions(-std=c++11)
 set(BOOST_ROOT "/opt/boost")
@@ -62,7 +62,7 @@ include_directories(
     include/vision_unit
     include/vision_unit/detect_factory
     include/vision_unit/vision_lidar_fusion/
-
+    ../../install/include
     )
 
 add_executable(armor_detect
@@ -78,15 +78,16 @@ add_executable(armor_detect
     src/detect_factory/rectang_det_HQG.cpp
 #    src/detect_factory/digital_classification.cpp
     )
-add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS})
-	target_link_libraries(armor_detect 
+add_dependencies(armor_detect ${catkin_EXPORTED_TARGETS}
+		vision_unit_generate_messages_cpp
+		vision_unit_generate_messages_py)
+target_link_libraries(armor_detect 
 	${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBRARIES} 
 	${Python_LIBRARIES} 
 	${image_transport_LIBRARIES}
 	${cv_bridge_LIBRARIES}
 	${glog_LIBRARIES}
 	${caffe_LIBRARIES}
-
 	/usr/local/lib/libglog.a	
 	
 )

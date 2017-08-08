@@ -48,6 +48,7 @@ public:
 
 	static cv::RotatedRect car_rect;
 	static detectstate state;
+	static float rectdistance ;
 
 };
 
@@ -113,6 +114,8 @@ public:
 	std::vector<rectangdetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
 	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, float thresh_max_angle,float thresh_min_area, float thresh_max_area);
+
+	void calculate_distance(std::vector<rectangdetect_info> & rect_infos);
 
 	std::vector<rectangdetect_info> detect_enemy(const cv::Mat &image,bool detect_blue);
 
