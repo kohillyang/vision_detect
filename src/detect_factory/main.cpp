@@ -28,6 +28,10 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <serial_comm/car_speed.h>
 #include "armor_detect.h"
+#include <fcntl.h>
+#include <unistd.h>
+//#include <sys/ioctl.h>
+#include <linux/videodev2.h>
 
 #define USB_USB_CAM 0
 #if USB_USB_CAM
@@ -63,14 +67,14 @@ class ImageConverter {
 			ROS_ERROR("cv_bridge exception: %s", e.what());
 			return;
 		}
-		cv::imshow(OPENCV_WINDOW, cv_ptr->image);
+		// cv::imshow(OPENCV_WINDOW, cv_ptr->image);
 		armor_solver->detect(cv_ptr->image);
 	}
 public:
 	ImageConverter() :
 			it_(nh_) {
 		std::cout << "hello world" << std::endl;
-		image_sub_ = this->it_.subscribe("/usb_cam/image_raw", 1, ImageConverter::imageCb);
+		image_sub_ = this->it_.subscribe("/usb_cam/image_raw", 0, ImageConverter::imageCb);
 		cv::namedWindow(OPENCV_WINDOW);
 
 	}
@@ -92,19 +96,29 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "armor_detect");
 	autocar::vision_mul::armor_detect_node armor_solver;
     cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/11.avi");
-//	    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/11.avi");
+    autocar::vision_mul::set_camera_exposure("/dev/video0",1);
+
+//    cv::VideoCapture capture_camera_forward(0);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+//    int myO_RDWR;
+//    int fd=open("/dev/video0",myO_RDWR);// 打开设备
+    //close(fd);// 关闭设备
+//    struct v4l2_capability cap;
+//    ioctl(fd,VIDIOC_QUERYCAP,&cap);
+//    printf("DriverName:%s/nCard Name:%s/nBus info:%s/nDriverVersion:%u.%u.%u/n",cap.driver,cap.card,cap.bus_info,(cap.version>>16)&0XFF,(cap.version>>8)&0XFF,cap.version&OXFF);
 
 	for(;;){
 	    capture_camera_forward >> image;
-	    cv::imshow("im",image);
-	    cv::waitKey(1);
 	    armor_solver.detect(image);
+	    cv::waitKey(0);
+		
 	}
 	ros::spin();
 	return 0;
+
 }
 #endif
 

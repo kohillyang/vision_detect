@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(vision_detect)
+project(armor_detect)
 set(CMAKE_BUILD_TYPE,Debug)
 add_definitions(-std=c++11)
 set(BOOST_ROOT "/opt/boost")
