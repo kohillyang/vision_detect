@@ -19,7 +19,7 @@
 #include <algorithm>
 //#include "digital_classification.hpp"
 
-#define _DEBUG_HQG
+//#define _DEBUG_HQG
 using namespace std;
 // #define _DEBUG_HQG_final
 
@@ -195,7 +195,7 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	std::cout << "thresh_binary:" << thresh_binary << "thresh_binary_color:"
 			<< thresh_binary_color << std::endl;
 
-	imshowd("m_binary_color0", m_binary_color);
+	//imshowd("m_binary_color0", m_binary_color);
 	cv::Mat element1 = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3));
 	cv::dilate(m_binary_color, m_binary_color, element1, cv::Point(-1, -1), 1);
 	m_binary_light = m_binary_color & m_binary_brightness; // 两二值图交集
@@ -217,12 +217,12 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 #ifdef _DEBUG_HQG
 	cv::Mat result = m_image_hql.clone();
 	cv::Mat result0 = m_image_hql.clone();
-	//drawContours(m_binary_brightness, contours_brightness, -1, cv::Scalar(127), 1);
-	//drawContours(m_binary_light, contours_light, -1, cv::Scalar(127), 1);
+	drawContours(m_binary_brightness, contours_brightness, -1, cv::Scalar(127), 1);
+	drawContours(m_binary_light, contours_light, -1, cv::Scalar(127), 1);
 
-//	imshowd("m_binary_color1", m_binary_color);
-//	imshowd("m_binary_brightness", m_binary_brightness);
-//	imshowd("m_binary_light", m_binary_light);
+	imshowd("m_binary_color1", m_binary_color);
+	imshowd("m_binary_brightness", m_binary_brightness);
+	imshowd("m_binary_light", m_binary_light);
 	cv::waitKey(1);
 #endif
 	return to_light_rects(contours_light, contours_brightness);
@@ -534,7 +534,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 					{
 						cv::Rect a = cv::Rect(lx, ly, lw, lh);
 						cv::Mat lrect = m_image(a);
-						imshowd("rect", lrect);
+						//imshowd("rect", lrect);
 						cv::cvtColor(lrect, lrect,cv::ColorConversionCodes::COLOR_BGR2GRAY);
 						lost3 = getlocalaveragegray(lrect, 0.3, 0.6);
 					}

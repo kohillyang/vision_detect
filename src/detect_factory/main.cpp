@@ -96,14 +96,12 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "armor_detect");
 	autocar::vision_mul::armor_detect_node armor_solver;
     cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/13.avi");
-//	    cv::VideoCapture capture_camera_forward(0);
+//	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/13.avi");
+    cv::VideoCapture capture_camera_forward(0);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+    autocar::vision_mul::set_camera_exposure("/dev/video0",1);
 
-    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
 //    int myO_RDWR;
 //    int fd=open("/dev/video0",myO_RDWR);// 打开设备
@@ -114,9 +112,9 @@ int main(int argc, char **argv) {
 
 	for(;;){
 	    capture_camera_forward >> image;
+	    armor_solver.detect(image);
 	    //cv::imshow("im",image);
 	    cv::waitKey(1);
-		
 	}
 	ros::spin();
 	return 0;
