@@ -116,7 +116,9 @@ public:
 
 	std::vector<rectangdetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
-	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, float thresh_max_angle,float thresh_min_area, float thresh_max_area);
+	bool check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,bool detect_blue);
+
+	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, bool detect_blue,float thresh_max_angle,float thresh_min_area, float thresh_max_area);
 
 	void calculate_distance(std::vector<rectangdetect_info> & rect_infos);
 

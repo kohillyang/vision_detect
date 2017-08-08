@@ -21,7 +21,7 @@
 
 //#define _DEBUG_HQG
 using namespace std;
-// #define _DEBUG_HQG_final
+//#define _DEBUG_HQG_final
 
 //Classifier myclassifier;
 
@@ -33,9 +33,9 @@ const float rectang_detecter::m_threshold_max_angle = 30.0f;
 
 const float rectang_detecter::m_threshold_min_area = 2.0f;
 
-const float rectang_detecter::m_threshold_max_area = 6000.0f;
+const float rectang_detecter::m_threshold_max_area = 4000.0f;
 
-const float rectang_detecter::threshold_line_binary = 6000.f;
+const float rectang_detecter::threshold_line_binary = 5500.f;
 
 const float rectang_detecter::threshold_line_binary_color = 4500.f;
 
@@ -227,8 +227,29 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 #endif
 	return to_light_rects(contours_light, contours_brightness);
 }
+bool rectang_detecter::check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,bool detect_blue)
+{
+	cv::Point2f vertex[4];
+	light.points(vertex);
+	float bright = 0;
+	int x,y,devide,count = 0,total = 20;
+	for(devide = total/4;devide <= total*3/4 ; devide++)
+	{
+		x = vertex[0].x*((float)devide/total) + vertex[2].x*(1.0-(float)devide/total);
+		y = vertex[0].y*((float)devide/total) + vertex[2].y*(1.0-(float)devide/total);
+		if(detect_blue)
+			bright += image.at<cv::Vec3b>(y,x)[0];
+		else
+			bright += image.at<cv::Vec3b>(y,x)[1];
+		count++;
+	}
+	if(bright/count>150)
+		return true;
+	else
+		return false;
+}
 std::vector<cv::RotatedRect> rectang_detecter::filter_lights(
-		const std::vector<cv::RotatedRect> &lights, float thresh_max_angle,
+		const std::vector<cv::RotatedRect> &lights, bool detect_blue,float thresh_max_angle,
 		float thresh_min_area, float thresh_max_area)
 {
 	std::vector<cv::RotatedRect> rects;
@@ -243,16 +264,19 @@ std::vector<cv::RotatedRect> rectang_detecter::filter_lights(
 		angle = rectlongLean(rect, w, h);
 		auto hwratio = h / w;
 
-		if (h >= 2)
+		if (h >= 3)
 		{
-			if (hwratio > 1.4 - 1.7*0.38 / sqrt(h))
+			if (hwratio > 1.4 - 1.304*0.4 / sqrt(sqrt(h)))
 			{
 				if (abs(angle) < (thresh_max_angle + 15.0))
 				{
 					if (rect.size.area() >= thresh_min_area
 							&& rect.size.area() <= thresh_max_area)
 					{
-						rects.push_back(rect);
+						if(check_light_in_Mat(m_image,rect,detect_blue))
+						{
+							rects.push_back(rect);
+						}
 					}
 				}
 			}
@@ -638,7 +662,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 			cv::Scalar(255, 0, 0));
 #endif
 
-	lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area, m_threshold_max_area);
+	lights = filter_lights(lights,detect_blue, m_threshold_max_angle, m_threshold_min_area, m_threshold_max_area);
 
 	auto Rectangs = detect_select_rect(lights);
 
@@ -674,7 +698,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	cv::putText(m_image, str , finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
 	}
 	std ::cout <<m_image.cols << m_image.rows <<std::endl;
-	cv::Size dsize = cv::Size(1280, 720);
+	cv::Size dsize = cv::Size(640, 480);
 	cv::Mat mg_resize;
 	cv::resize(m_image, mg_resize, dsize);
 
@@ -701,7 +725,7 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
 	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 100), 1, true,
 			cv::Scalar(255, 0, 0));
 
-	lights = filter_lights(lights, m_threshold_max_angle, m_threshold_min_area,
+	lights = filter_lights(lights,detect_blue, m_threshold_max_angle, m_threshold_min_area,
 			m_threshold_max_area);
 
 	draw_rotated_rects(light_img, lights, cv::Scalar(0, 100, 255), 1, false,
