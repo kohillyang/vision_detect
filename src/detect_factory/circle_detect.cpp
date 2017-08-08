@@ -36,7 +36,31 @@ using namespace cv;
 using namespace std;
 class PyCircleDetect{
 private:
-    PyObject *func_tryFindMinAreaRect;
+	std::vector<int> x2={
+#include"txt/x2.txt"
+	};
+	std::vector<int> y2={
+#include"txt/y2.txt"
+	};
+	std::vector<int> x3={
+#include"txt/x3.txt"
+	};
+	std::vector<int> y3={
+#include"txt/y3.txt"
+	};
+	std::vector<int> x4={
+#include"txt/x4.txt"
+	};
+	std::vector<int> y4={
+#include"txt/y4.txt"
+	};
+	std::vector<int> x5={
+#include"txt/x5.txt"
+	};
+	std::vector<int> y5={
+#include"txt/y5.txt"
+	};
+
 public:
     static std::string getResAbsolutePath(){
     	char currentFileName[]=__FILE__;
@@ -52,53 +76,66 @@ public:
     }
 
     PyCircleDetect(){
-        cout << "start loading Python Module..." << endl;
-        Py_Initialize();
-        PyRun_SimpleString("import sys,os");
-        PyRun_SimpleString((string("sys.path.append('")+getResAbsolutePath()+"')").data());
-        PyRun_SimpleString("import trainAndTest");
-        PyObject* moduleName = PyString_FromString("AreaRect");
-        PyObject* pModule = PyImport_Import(moduleName);
-        if (!pModule) // 加载模块失败
-        {
-            cerr << "[ERROR] Python get module failed." << endl;
-            exit(-1);
-        }
-        func_tryFindMinAreaRect = PyObject_GetAttrString(pModule, "tryFindMinAreaRect");
-        if (!func_tryFindMinAreaRect || !PyCallable_Check(func_tryFindMinAreaRect))
-        {
-            cerr << "[ERROR] Can't find function (tryFindMinAreaRect)" << endl;
-            exit(-1);
-        }
-        cout << "[info] Python Module load Finished." << endl;
 
     }
-    bool tryFindMinAreaRect(const cv::Mat &img,cv::Mat &img_outPut){
+    void xy2rad(){
 
+    }
+    bool tryFindMinAreaRect(const cv::Mat &img,cv::Mat &img_outPut,float &lsum_average){
+    	if(img.rows < 5 ||  img.cols <10 || img.cols/img.rows < 1.3){
+    		return false;
+    	}
+    	cv::Mat img_stdsize;
+    	cv::resize(img, img_stdsize, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
+    	vector<Mat> bgr;
+    	cv::split(img_stdsize(cv::Rect(15,0,32,32)),bgr);
+    	int i = 0,sum_p = 0;
+    	for(auto x = bgr[0].data;i<64*32;i++){
+    		sum_p += x[i];
+    	}
+    	sum_p /= 32 *64;
+    	if(sum_p < 40){
+    		return false;
+    	}
+    	lsum_average = sum_p;
+    	kohill::print("sum_mean_cut:",sum_p);
+    	cv::Mat img_binary;
+    	cv::threshold(bgr[0],img_binary,sum_p,255,cv::ThresholdTypes::THRESH_BINARY);
+    	auto imgfunc = [&img_binary](int i, int j) { return *(img_binary.ptr<uchar>(i) + j); };
+    	int r3_count = 0,r4_count = 0,r5_count=0;
+    	for(int i = 0;i<x3.size();i++){
+//    		kohill::print(x3[i],y3[i],int(imgfunc(x3[i],y3[i])));
+    		r3_count += imgfunc(x3[i],y3[i]) > 1?1:0;
+    	}
+    	for(int i = 0;i<x4.size();i++){
+    		r4_count += imgfunc(x4[i],y4[i]) > 1?1:0;
+    	}
+    	for(int i = 0;i<x5.size();i++){
+    		r5_count += imgfunc(x5[i],y5[i]) > 1?1:0;
+    	}
+    	int  judge = 0 ;
+    	if(r3_count >= 17){
+    		judge += 1;
+    	}
+    	if(r4_count >= 10){
+    		judge += 1;
+    	}
+    	if(r5_count >= 27){
+    		judge += 1;
+    	}
 
+    	cv::imshow("input",img_stdsize);
+    	cv::imshow("img_cut_binary",bgr[2]);
+    	cv::imshow("input_img_binary",img_binary);
 
-
-        cv::Mat m_gray;
-        cv::cvtColor(img, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY);
-        cv::imwrite("/tmp/armor_detect_tmp.png",img);
-        cv::resize(m_gray, m_gray, cv::Size(64, 32), (0, 0), (0, 0), cv::INTER_CUBIC);
-        int img_size = m_gray.cols * m_gray.channels() *m_gray.rows;
-        PyObject* args = PyTuple_New(1);
-        PyObject *pListArg1 = PyList_New(0);
-        for (int i = 0;i<img_size;i++){
-        	PyObject *p = Py_BuildValue("b",m_gray.data[i]);
-        	PyList_Append(pListArg1,p);
-        }
-        PyTuple_SetItem(args,0,pListArg1);
-        PyObject *r_object = PyObject_CallObject(func_tryFindMinAreaRect, args);
-        int detected=0,x,y,w,h;
-        PyArg_ParseTuple(r_object,"i|i|i|i|i",&detected,&x,&y,&w,&h);
-        if(detected == 1){
-        	img_outPut = img(cv::Rect(x,y,w,h));
+    	if(judge >=2){
+        	kohill::print("yes",r3_count,r4_count,r5_count);
         	return true;
-        }else{
-           	return false;
-        }
+    	}else{
+        	kohill::print("no ",r3_count,r4_count,r5_count);
+        	kohill::print("size",x3.size(),x4.size(),x5.size());
+        	return false;
+    	}
     }
     ~PyCircleDetect(){
 //        Py_Finalize();
@@ -253,7 +290,7 @@ bool detectRectangle(const cv::Mat &img,std::vector<cv::RotatedRect> &rects){
 }
 
 //@param img:light red & light red
-void deltaAndMean(const std::vector<float> &ve,float &mean,float &delta){
+void deltaAndMean(const std::vector<float> &ve,float &mean,float &delta,float &sumAll){
 	float su = 0,delta_sum = 0,sum2 = 0;
 	for(int i=0;i<ve.size();i++){
 		sum2 += ve[i];
@@ -265,6 +302,7 @@ void deltaAndMean(const std::vector<float> &ve,float &mean,float &delta){
 		delta_sum +=  d *d;
 	}
 	delta = std::sqrt(delta_sum);
+	sumAll = sum2;
 }
 bool kohill_car_detect(const cv::Mat &img,cv::RotatedRect &rect){
 	int  width = img.cols;
@@ -286,31 +324,31 @@ bool kohill_car_detect(const cv::Mat &img,cv::RotatedRect &rect){
 		}
 		row_sum.push_back(s/width);
 	}
+	float sumAll;
+	deltaAndMean(col_sum,mean_x,delta_x,sumAll);
+	deltaAndMean(row_sum,mean_y,delta_y,sumAll);
+	cerr << ("[Warn]:no car detected,try using mean value instead.") << endl;
+	std::cout << sumAll << std::endl;
 
-	deltaAndMean(col_sum,mean_x,delta_x);
-	deltaAndMean(row_sum,mean_y,delta_y);
-	kohill::print("\nmean Value\t\t\t\t\t\t",delta_x," ",delta_y);
-	rect  = cv::RotatedRect(
-			cv::Point2f(mean_x,mean_y),
-			cv::Size2f(64,32),0);
+	if(sumAll > 100){
+		kohill::print("far cat detected.",delta_x," ",delta_y);
+		rect  = cv::RotatedRect(
+				cv::Point2f(mean_x,mean_y),
+				cv::Size2f(6,3),0);
+		return true;
+	}
 	return false;
 }
 
 rectang_detecter recDetector(false);
 //Classifier calssifier;
 bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
-	auto img_show = img.clone();
-
+	static Point2f lastResult(0,0);
+	auto img_temp = img.clone();
 	std::vector<cv::Point2f> centers;
 	std::vector<float> radiuse;
-
-	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,true);
-	auto img_lights = recDetector.m_binary_light;
-	cv::RotatedRect car_rect;
-	autocar::vision_mul::kohill_car_detect(img_lights,car_rect);
+	std::vector<rectangdetect_info> rectangs = recDetector.detect_enemy(img,false);
 	auto img_car = img.clone();
-	drawRect(img_car,car_rect,cv::Scalar(255,255,255));
-
 	std::vector<cv::RotatedRect> rects_last;
 	std::vector<float> delta_last;
 	for (auto x = rectangs.begin(); x != rectangs.end(); x++)
@@ -319,19 +357,14 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 		if (rect.br().x < img.size().width && rect.br().y < img.size().height
 				&& rect.tl().x > 0 && rect.tl().y > 0)
 		{
-			auto image_sub_sub = img(rect);
+			auto image_sub_sub = img_temp(rect);
 			cv::Mat img_out;
-
-			if (pythonCircleDetector.tryFindMinAreaRect(image_sub_sub,img_out))
+			float l_sum;
+			if (pythonCircleDetector.tryFindMinAreaRect(image_sub_sub,img_out,l_sum))
 			{
 				rects_last.push_back(x->rect);
-				delta_last.push_back(0);
-				//cv::imshow("img_circle",img_out);
-//				string str= calssifier.classify_mnist(img_out);
-//				cout << "[info]: detect result"<<str << std::endl ;
-			}
-			else
-			{
+				delta_last.push_back(point_distance(x->rect.center,lastResult));
+				rect_out =x->rect;
 			}
 		}
 		else
@@ -339,8 +372,6 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 			cerr << "over flow.." << endl;
 		}
 	}
-	//kohill::kimshow("my img_car",img_car);
-
 	for(int i = 0;i<rects_last.size();i++){
 		for(int j=0;rects_last.size()>1 && j<rects_last.size()-1;j++){
 			if(delta_last[j] >delta_last[j+1] ){
@@ -351,6 +382,7 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 	}
 	if(rects_last.size()> 0 ){
 		rect_out = rects_last[0];
+		lastResult =rect_out.center;
 		return true;
 	}else{
 		float x_center =0.0;
@@ -362,11 +394,19 @@ bool kohill_armor_detect(const cv::Mat &img,cv::RotatedRect &rect_out){
 				{return p1.lost < p2.lost;});
 		if(rectangs.size()>0){
 			rect_out =rectangs[0].rect;
+			lastResult = rect_out.center;
 			return true;
 		}
-		return false;
+		auto img_lights = recDetector.m_binary_light;
+		cv::RotatedRect car_rect;
+		if(autocar::vision_mul::kohill_car_detect(img_lights,car_rect)){
+			rect_out=  car_rect;
+			lastResult = rect_out.center;
+			return true;
+		}else{
+			return false;
+		}
 	}
-	return false;
 }
 
 

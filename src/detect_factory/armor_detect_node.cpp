@@ -9,6 +9,7 @@
 #include <math.h>
 #include "circle_detect.hpp"
 #define _DEBUG_VISION
+#define SHOW_RESULT 1
 namespace autocar
 {
 namespace vision_mul
@@ -64,6 +65,9 @@ static void drawRect(cv::Mat &img,const cv::RotatedRect rect){
 static std::chrono::time_point<std::chrono::system_clock> time_his = std::chrono::system_clock::now();
 void armor_detect_node::detect(const cv::Mat &image)
 {
+#if SHOW_RESULT
+	auto img_backup = image.clone();
+#endif
 	std::chrono::duration<double> diff = std::chrono::system_clock::now()-time_his;
 	std::cout << "[info]:framerate:"<<10/diff.count() << std::endl;
 	time_his =std::chrono::system_clock::now();
@@ -73,7 +77,6 @@ void armor_detect_node::detect(const cv::Mat &image)
 		std::cout<<"Image has no data!"<<std::endl;
 		exit(-1);
 	}else{
-		//cv::imshow("detect result",image);
 		cv::RotatedRect rect;
 		if(kohill_armor_detect(image,rect)){
 			float dis = 0.1/2*std::sqrt(1/rect.size.area());
@@ -97,14 +100,18 @@ void armor_detect_node::detect(const cv::Mat &image)
 			goal_pose.target_pose.pose.orientation.z= 0;
 			goal_pose.target_pose.pose.orientation.w= 1;
 			pub_goal.publish(goal_pose);
-			// auto image_tmp = image.clone();
-			// drawRect(image_tmp,rect);
-			//cv::imshow("detect result",image_tmp);
+#if SHOW_RESULT
+			drawRect(img_backup,rect);
+			cv::imshow("detect result",img_backup);
+#endif
 		}else{
 			armor_pos.detected = false;
 			pub_armor_pos.publish(armor_pos);
 			goal_pose.target_pose.pose.position.z =0;
 			pub_goal.publish(goal_pose);
+#if SHOW_RESULT
+			cv::imshow("detect result",img_backup);
+#endif
 		}
 		pub_armor_pos.publish(armor_pos);
 	}

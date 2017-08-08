@@ -25,3 +25,6 @@ build
 src/detect_factory/detect_res/cl/*
 
 *.png
+/Default/
+
+*.pyc
