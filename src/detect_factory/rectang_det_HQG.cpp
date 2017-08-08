@@ -21,7 +21,7 @@
 
 #define _DEBUG_HQG
 using namespace std;
-#define _DEBUG_HQG_final
+// #define _DEBUG_HQG_final
 
 //Classifier myclassifier;
 

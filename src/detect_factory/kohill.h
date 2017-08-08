@@ -25,11 +25,11 @@ void print(T0 x,T1 y){
 }
 template<typename T0,typename T1,typename T2>
 void print(T0 x,T1 y,T2 z){
-	std::cout << x <<" "<<y<< ""<< z<<std::endl;
+	std::cout << x <<" "<<y<< " "<< z<<std::endl;
 }
 template<typename T0,typename T1,typename T2,typename T3>
 void print(T0 x,T1 y,T2 z,T3 m){
-	std::cout << x <<" "<<y<< ""<< z<< m<<std::endl;
+	std::cout << x <<" "<<y<< " "<< z<< " "<< m<<std::endl;
 }
 void kimshow(const std::string &title,const cv::Mat &img){
 	cv::imshow(title,img);
