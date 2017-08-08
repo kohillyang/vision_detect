@@ -16,7 +16,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <ros/ros.h>
-#include <tf/tf.h>
+#include<tf/tf.h>
 #include <boost/thread.hpp>
 #include <boost/atomic.hpp>
 #include <opencv2/opencv.hpp>
@@ -96,12 +96,10 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "armor_detect");
 	autocar::vision_mul::armor_detect_node armor_solver;
     cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/17.webm");
-//	    cv::VideoCapture capture_camera_forward(0);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+	//cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/11.avi");
+    autocar::vision_mul::set_camera_exposure("/dev/video0",1);
 
-//    cv::VideoCapture capture_camera_forward(0);
+    cv::VideoCapture capture_camera_forward(0);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 640);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
 
@@ -115,7 +113,7 @@ int main(int argc, char **argv) {
 	for(;;){
 	    capture_camera_forward >> image;
 	    armor_solver.detect(image);
-	    cv::waitKey(0);
+	    cv::waitKey(1);
 		
 	}
 	ros::spin();
