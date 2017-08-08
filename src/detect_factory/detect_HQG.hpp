@@ -47,6 +47,7 @@ public:
 
 
 	static cv::RotatedRect car_rect;
+	static int car_light_num;
 	static detectstate state;
 	static float rectdistance ;
 
@@ -110,6 +111,8 @@ public:
 	bool detect_two_light(const cv::RotatedRect &l1,const cv::RotatedRect &l2);
 
 	cv::RotatedRect get_minrect_from_rects(std::vector<cv::RotatedRect> rects , float &error);
+
+	float getlocalaveragegray(const cv::Mat& image ,float devidex,float devidey);
 
 	std::vector<rectangdetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 

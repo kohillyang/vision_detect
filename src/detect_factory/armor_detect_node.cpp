@@ -67,13 +67,13 @@ void armor_detect_node::detect(const cv::Mat &image)
 	std::chrono::duration<double> diff = std::chrono::system_clock::now()-time_his;
 	std::cout << "[info]:framerate:"<<10/diff.count() << std::endl;
 	time_his =std::chrono::system_clock::now();
-	cv::waitKey(1);
+
 	if(image.empty())
 	{
 		std::cout<<"Image has no data!"<<std::endl;
 		exit(-1);
 	}else{
-		cv::imshow("detect result",image);
+
 		cv::RotatedRect rect;
 		if(kohill_armor_detect(image,rect)){
 			float dis = 0.1*std::sqrt(1/rect.size.area());
@@ -99,7 +99,7 @@ void armor_detect_node::detect(const cv::Mat &image)
 			pub_goal.publish(goal_pose);
 			auto image_tmp = image.clone();
 			drawRect(image_tmp,rect);
-			cv::imshow("detect result",image_tmp);
+			//cv::imshow("detect result",image_tmp);
 		}else{
 			armor_pos.detected = false;
 			pub_armor_pos.publish(armor_pos);

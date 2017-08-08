@@ -29,7 +29,7 @@ void draw_circle(const cv::Mat &img, const cv::Point &center, int radius, const 
 
 void imshowd(const cv::String &winname, const cv::Mat &img)
 {
-    // cv::imshow(winname, img);
+    cv::imshow(winname, img);
 }
 
 #endif // _DEBUG_VISION
