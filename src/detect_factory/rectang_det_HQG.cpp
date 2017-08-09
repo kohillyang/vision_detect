@@ -19,9 +19,9 @@
 #include <algorithm>
 //#include "digital_classification.hpp"
 
-//#define _DEBUG_HQG
+#define _DEBUG_HQG
 using namespace std;
-//#define _DEBUG_HQG_final
+#define _DEBUG_HQG_final
 
 //Classifier myclassifier;
 
@@ -37,7 +37,7 @@ const float rectang_detecter::m_threshold_max_area = 4000.0f;
 
 const float rectang_detecter::threshold_line_binary = 5500.f;
 
-const float rectang_detecter::threshold_line_binary_color = 4500.f;
+const float rectang_detecter::threshold_line_binary_color = 4000.f;
 
 
 
@@ -66,7 +66,7 @@ rectang_detecter::rectang_detecter(bool debug_on)
 	old_finalrect->rect.size.height = 0;
 }
 std::vector<std::vector<cv::Point>> rectang_detecter::find_contours(
-		const cv::Mat &binary)
+		const cv::Mat &binary,int Mode)
 {
 	std::vector<std::vector<cv::Point>> contours; // 边缘
 	const auto mode = cv::RetrievalModes::RETR_EXTERNAL; //RETR_LIST;
@@ -112,7 +112,7 @@ double rectang_detecter::adjust_threshold_binary(const cv::Mat &image,
 			totalgray += (*data++) & 1;
 		}
 	}
-	threshold += (totalgray - threshold_line) / 8000;
+	threshold += (totalgray - threshold_line) / 7000;
 	threshold = threshold > 255 ? 255 : threshold;
 	threshold = threshold < 0 ? 0 : threshold;
 	return threshold;
@@ -170,13 +170,15 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 
 	auto light = highlight_blue_or_red(m_image, detect_blue); // 灯柱周边颜色高亮图
 
-	static float thresh_binary = 170;
+	static float thresh_binary = 160;
 	cv::threshold(m_gray, m_binary_brightness, thresh_binary, 255,
 			cv::ThresholdTypes::THRESH_BINARY); // 亮度二值图
 	thresh_binary = adjust_threshold_binary(m_binary_brightness, thresh_binary,
 			threshold_line_binary);
-	thresh_binary = thresh_binary > 200 ? 200 : thresh_binary;
-	thresh_binary = thresh_binary < 110 ? 110 : thresh_binary;
+	if(detect_blue)
+	{thresh_binary = thresh_binary > 165 ? 165 : thresh_binary;thresh_binary = thresh_binary < 155 ? 155 : thresh_binary;}
+	else
+	{thresh_binary = thresh_binary > 155 ? 155 : thresh_binary;thresh_binary = thresh_binary < 150 ? 150 : thresh_binary;}
 
 	double thresh = detect_blue ? 50 : 80;
 	static float thresh_binary_color = 50;
@@ -188,8 +190,10 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 
 	thresh_binary_color = adjust_threshold_binary(m_binary_color,
 			thresh_binary_color, threshold_line_binary_color);
-	thresh_binary_color = thresh_binary_color > 90 ? 90 : thresh_binary_color;
-	thresh_binary_color = thresh_binary_color < 30 ? 30 : thresh_binary_color;
+	if(detect_blue)
+	{thresh_binary_color = thresh_binary_color > 50 ? 50 : thresh_binary_color;thresh_binary_color = thresh_binary_color < 30 ? 30 : thresh_binary_color;}
+	else
+	{thresh_binary_color = thresh_binary_color > 60 ? 60 : thresh_binary_color;thresh_binary_color = thresh_binary_color < 40 ? 40 : thresh_binary_color;}
 
 
 	std::cout << "thresh_binary:" << thresh_binary << "thresh_binary_color:"
@@ -204,22 +208,22 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 	cv::dilate(m_binary_brightness, m_binary_brightness, element2, cv::Point(-1, -1), 1);
 
 #ifdef _DEBUG_HQG // _DEBUG_VISION
-	auto contours_light = find_contours(m_binary_light.clone()); // 两二值图交集后白色的轮廓
+	auto contours_light = find_contours(m_binary_light.clone(),cv::RetrievalModes::RETR_EXTERNAL); // 两二值图交集后白色的轮廓
 #else
-			auto contours_light = find_contours(m_binary_light); // 两二值图交集后白色的轮廓
+			auto contours_light = find_contours(m_binary_light,cv::RetrievalModes::RETR_EXTERNAL); // 两二值图交集后白色的轮廓
 #endif
 #ifdef _DEBUG_HQG //_DEBUG_VISION
-	auto contours_brightness = find_contours(m_binary_brightness.clone()); // 灰度图灯轮廓
+	auto contours_brightness = find_contours(m_binary_brightness.clone(),cv::RetrievalModes::RETR_EXTERNAL); // 灰度图灯轮廓
 #else
-			auto contours_brightness = find_contours(m_binary_brightness); // 灰度图灯轮廓
+			auto contours_brightness = find_contours(m_binary_brightness,cv::RetrievalModes::RETR_EXTERNAL); // 灰度图灯轮廓
 #endif
 
 #ifdef _DEBUG_HQG
 	cv::Mat result = m_image_hql.clone();
 	cv::Mat result0 = m_image_hql.clone();
-	drawContours(m_binary_brightness, contours_brightness, -1, cv::Scalar(127), 1);
-	drawContours(m_binary_light, contours_light, -1, cv::Scalar(127), 1);
-
+	//drawContours(m_binary_brightness, contours_brightness, -1, cv::Scalar(127), 1);
+	//drawContours(m_binary_light, contours_light, -1, cv::Scalar(127), 1);
+	imshowd("m_gray", m_gray);
 	imshowd("m_binary_color1", m_binary_color);
 	imshowd("m_binary_brightness", m_binary_brightness);
 	imshowd("m_binary_light", m_binary_light);
@@ -227,23 +231,31 @@ std::vector<cv::RotatedRect> rectang_detecter::detect_lights(bool detect_blue)
 #endif
 	return to_light_rects(contours_light, contours_brightness);
 }
-bool rectang_detecter::check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,bool detect_blue)
+bool rectang_detecter::check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,float para1,float para2,bool detect_blue)
 {
 	cv::Point2f vertex[4];
 	light.points(vertex);
 	float bright = 0;
-	int x,y,devide,count = 0,total = 20;
-	for(devide = total/4;devide <= total*3/4 ; devide++)
+	int x,y,devide,count = 0,countbig = 0,total = 20;
+	for(devide = total/8;devide <= total*7/8 ; devide++)
 	{
 		x = vertex[0].x*((float)devide/total) + vertex[2].x*(1.0-(float)devide/total);
 		y = vertex[0].y*((float)devide/total) + vertex[2].y*(1.0-(float)devide/total);
 		if(detect_blue)
+		{
 			bright += image.at<cv::Vec3b>(y,x)[0];
+			if(image.at<cv::Vec3b>(y,x)[0]>190)
+				countbig++;
+		}
 		else
-			bright += image.at<cv::Vec3b>(y,x)[1];
+		{
+			bright += image.at<cv::Vec3b>(y,x)[2];
+			if(image.at<cv::Vec3b>(y,x)[2]>190)
+				countbig++;
+		}
 		count++;
 	}
-	if(bright/count>150)
+	if(bright/count>para1 || countbig>=total*para2)
 		return true;
 	else
 		return false;
@@ -273,11 +285,28 @@ std::vector<cv::RotatedRect> rectang_detecter::filter_lights(
 					if (rect.size.area() >= thresh_min_area
 							&& rect.size.area() <= thresh_max_area)
 					{
-						if(check_light_in_Mat(m_image,rect,detect_blue))
+						if(check_light_in_Mat(m_image,rect,145,0.1,detect_blue))
 						{
 							rects.push_back(rect);
+							continue;
 						}
 					}
+				}
+			}
+		}
+		if(h<15)
+		{
+			if(hwratio<1.5)
+			{
+				if(check_light_in_Mat(m_image,rect,160,0.3,detect_blue))
+				{
+					cv::RotatedRect newrect;
+					newrect.center = rect.center;
+					newrect.size.width = rect.size.height/2;
+					newrect.size.height = rect.size.height;
+					newrect.angle = 0;
+					rects.push_back(newrect);
+					continue;
 				}
 			}
 		}
@@ -508,7 +537,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 			ang_ = (ang1 + ang2) / 2;
 
 			/*以下为检测装甲板*/
-			if ((fabs(ang1 - ang2) < 20 && fabs(h1 - h2) < 0.6 * h_
+			if ((fabs(ang1 - ang2) < 25 && fabs(h1 - h2) < 0.6 * h_
 			//&&fabs(w1-w2)<w_/4
 					)
 				||(h_< 12
@@ -517,12 +546,12 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 			{
 
 				if ((fabs(light1.center.x - light2.center.x) < 3.5 * h_
-						&& fabs(light1.center.x - light2.center.x) > 0.8 * h_
+						&& fabs(light1.center.x - light2.center.x) > 1.3 * h_
 						&& fabs(light1.center.y - light2.center.y)
 								< 0.7 * (1 + fabs(ang_) / 40) * h_) //delta x ,y
 						||(h_< 12
 						&&fabs(light1.center.x - light2.center.x) < 4.5 * h_
-						&& fabs(light1.center.x - light2.center.x) > 1.2 * h_
+						&& fabs(light1.center.x - light2.center.x) > 1.3 * h_
 						&& fabs(light1.center.y - light2.center.y)< 1.0 * (1 + fabs(ang_) / 40) * h_
 						))
 				{
@@ -531,9 +560,9 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 					rect.angle = ang_;
 					rect.center.x = (light1.center.x + light2.center.x) / 2;
 					rect.center.y = (light1.center.y + light2.center.y) / 2;
-					rect.size.width = 1.2
+					rect.size.width = 1.0
 							* abs(light1.center.x - light2.center.x);
-					rect.size.height = 1.5 * h_;
+					rect.size.height = 1.0 * h_;
 
 					float ww, hh, angg;
 					angg = rectlongLean(rect, ww, hh);
@@ -549,20 +578,21 @@ std::vector<rectangdetect_info> rectang_detecter::detect_select_rect(
 					}
 
 					float lost1 = fabs(ang1 - ang2) / 10 + fabs(h1 - h2)/h_ + fabs(ang_)/30;
-					float lost2 = fabs(fabs(light1.center.x - light2.center.x)/h_ - 2.4)
-							+ fabs(light1.center.y - light2.center.y)/h_;
+					float lost2 = fabs(fabs(light1.center.x - light2.center.x)/h_ - 2.7)
+							+ 1.5 * fabs(light1.center.y - light2.center.y)/h_;
 					float lost3 = 0;
 					int lx = rect.center.x - rect.size.width/2;int ly = rect.center.y - rect.size.height/2;
 					int lw = rect.size.width; int lh = rect.size.height;
-					if(0 <= lx && 0 <= ly && lx + lw <= m_image.cols && ly + lh <= m_image.rows)
+					lx = lx + 0.3*lw; ly = ly + 0.0*lh; lw = 0.4*lw; lh = 1.0*lh;
+					if(0 <= lx && 0 <= ly && lw > 0 && lh > 0 && lx + lw <= m_image.cols && ly + lh <= m_image.rows)
 					{
 						cv::Rect a = cv::Rect(lx, ly, lw, lh);
 						cv::Mat lrect = m_image(a);
-						//imshowd("rect", lrect);
 						cv::cvtColor(lrect, lrect,cv::ColorConversionCodes::COLOR_BGR2GRAY);
-						lost3 = getlocalaveragegray(lrect, 0.3, 0.6);
+						imshowd("lrect", lrect);
+						lost3 = - getlocalaveragegray(lrect, 1, 1);
 					}
-					float totallost = lost1 + lost2 - lost3/10 - 0.1 * h_;
+					float totallost = lost1 + lost2 + lost3/10 - 0.5 * h_;
 
 					rectangs.push_back(rectangdetect_info(rect, vecpoint, light1, light2,totallost));
 				}
@@ -637,6 +667,28 @@ void rectang_detecter::calculate_distance(std::vector<rectangdetect_info> & rect
 	{}
 
 }
+void rectang_detecter::tracking(cv::Mat frame, cv::Mat &model, cv::Rect &trackBox)
+{
+    cv::Mat gray;
+    cvtColor(frame, gray, CV_RGB2GRAY);
+
+    cv::Rect searchWindow;
+    searchWindow.width = trackBox.width * 3;
+    searchWindow.height = trackBox.height * 3;
+    searchWindow.x = trackBox.x + trackBox.width * 0.5 - searchWindow.width * 0.5;
+    searchWindow.y = trackBox.y + trackBox.height * 0.5 - searchWindow.height * 0.5;
+    searchWindow &= cv::Rect(0, 0, frame.cols, frame.rows);
+
+    cv::Mat similarity;
+    matchTemplate(gray(searchWindow), model, similarity, CV_TM_CCOEFF_NORMED);
+
+    double mag_r;
+    cv::Point point;
+    cv::minMaxLoc(similarity, 0, &mag_r, 0, &point);
+    trackBox.x = point.x + searchWindow.x;
+    trackBox.y = point.y + searchWindow.y;
+    model = gray(trackBox);
+}
 std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &image, bool detect_blue)
 {
 
@@ -658,7 +710,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	auto lights = detect_lights(detect_blue);
 
 #ifdef _DEBUG_HQG
-	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 0), 2, true,
+	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 0), 1, false,
 			cv::Scalar(255, 0, 0));
 #endif
 
@@ -671,7 +723,7 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	calculate_distance(Rectangs);
 
 #ifdef _DEBUG_HQG
-	draw_rotated_rects(light_img, lights, cv::Scalar(0, 0, 255), 2, false, cv::Scalar(255, 0, 0));
+	draw_rotated_rects(light_img, lights, cv::Scalar(0, 0, 255), 1, false, cv::Scalar(255, 0, 0));
 	imshow("light_img", light_img);
 #endif
 
@@ -690,12 +742,12 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 
 	for (auto it : Rectangs)
 	{
-		draw_rotated_rect(m_image, it.rect, cv::Scalar(250, 100, 0), 2);
+		draw_rotated_rect(m_image, it.rect, cv::Scalar(194, 158, 241), 1);
 	}
-	draw_rotated_rect(m_image, finalrect->rect, cv::Scalar(0, 255, 47), 2);
-	draw_rotated_rect(m_image, rectangdetect_info::car_rect, cv::Scalar(194, 158, 241), 2);
+	draw_rotated_rect(m_image, finalrect->rect, cv::Scalar(0, 255, 47), 1);
+	//draw_rotated_rect(m_image, rectangdetect_info::car_rect, cv::Scalar(250,100,0), 2);
 	string str = static_cast<ostringstream*>( &(ostringstream() << rectangdetect_info::rectdistance) )->str();
-	cv::putText(m_image, str , finalrect->rect.center, CV_FONT_ITALIC, 1.5, cv::Scalar(55, 250, 0), 5, 8);
+	//cv::putText(m_image, str , finalrect->rect.center, CV_FONT_ITALIC, 0.5, cv::Scalar(55, 250, 0), 5, 8);
 	}
 	std ::cout <<m_image.cols << m_image.rows <<std::endl;
 	cv::Size dsize = cv::Size(640, 480);
@@ -705,6 +757,10 @@ std::vector<rectangdetect_info> rectang_detecter::detect_enemy( const cv::Mat &i
 	imshow("final_rectang", mg_resize);
 
 #endif
+
+	if(Rectangs.size()==0)
+	{
+	}
 
 
 	return Rectangs;
@@ -720,6 +776,7 @@ bool rectang_detecter::detect(const cv::Mat &image, bool detect_blue)
 
 	cv::cvtColor(m_image, m_gray, cv::ColorConversionCodes::COLOR_BGR2GRAY); //gray
 	//imshowd("m_gray", m_gray);
+
 	auto lights = detect_lights(detect_blue);
 
 	draw_rotated_rects(light_img, lights, cv::Scalar(0, 255, 100), 1, true,

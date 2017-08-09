@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "armor_detect");
 	autocar::vision_mul::armor_detect_node armor_solver;
     cv::Mat image;
-	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/20.avi");
+	cv::VideoCapture capture_camera_forward("/home/kohill/vision_dataset/21.avi");
     //cv::VideoCapture capture_camera_forward(0);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     capture_camera_forward.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 	    capture_camera_forward >> image;
 	    armor_solver.detect(image);
 	    //cv::imshow("im",image);
-	    cv::waitKey(1);
+	    cv::waitKey(0);
 	}
 	ros::spin();
 	return 0;

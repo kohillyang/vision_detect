@@ -9,7 +9,7 @@
 #include <math.h>
 #include "circle_detect.hpp"
 #define _DEBUG_VISION
-#define SHOW_RESULT 0
+#define SHOW_RESULT 1
 namespace autocar
 {
 namespace vision_mul

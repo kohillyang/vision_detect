@@ -85,7 +85,7 @@ private:
 public:
 	rectang_detecter(bool debug_on);
 
-	std::vector<std::vector<cv::Point>> find_contours(const cv::Mat &binary);
+	std::vector<std::vector<cv::Point>> find_contours(const cv::Mat &binary,int Mode);
 
 	cv::Mat highlight_blue_or_red(const cv::Mat &image, bool detect_blue);
 
@@ -116,11 +116,13 @@ public:
 
 	std::vector<rectangdetect_info> detect_select_rect(const std::vector<cv::RotatedRect> &lights);
 
-	bool check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,bool detect_blue);
+	bool check_light_in_Mat(const cv::Mat &image,const cv::RotatedRect &light,float para1,float para2,bool detect_blue);
 
 	std::vector<cv::RotatedRect> filter_lights(const std::vector<cv::RotatedRect> &lights, bool detect_blue,float thresh_max_angle,float thresh_min_area, float thresh_max_area);
 
 	void calculate_distance(std::vector<rectangdetect_info> & rect_infos);
+
+	void tracking(cv::Mat frame, cv::Mat &model, cv::Rect &trackBox);
 
 	std::vector<rectangdetect_info> detect_enemy(const cv::Mat &image,bool detect_blue);
 
